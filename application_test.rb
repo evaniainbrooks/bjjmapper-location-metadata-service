@@ -4,9 +4,12 @@ require './application'
 require './config'
 require 'test/unit'
 require 'rack/test'
+require 'mocha/test_unit'
+require 'mocha/parameter_matchers'
 
 class LocationFetchServiceTest < Test::Unit::TestCase
   include Rack::Test::Methods
+  include Mocha::ParameterMatchers
 
   def app
     Sinatra::Application
@@ -32,6 +35,8 @@ class LocationFetchServiceTest < Test::Unit::TestCase
   end
 
   def test_it_enqueues_a_places_search_job_and_returns_202
+    Resque.expects(:enqueue).with(PlacesSearchJob, anything)
+
     post "/places/search?api_key=#{API_KEY}&location_id=#{nubjjparos}"
     assert_equal 202, last_response.status
   end

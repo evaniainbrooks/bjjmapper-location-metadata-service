@@ -8,8 +8,17 @@ module PlacesSearchJob
   @queue = QUEUE_NAME
   @connection = Mongo::MongoClient.new(DATABASE_HOST, DATABASE_PORT).db(DATABASE_APP_DB)
 
+  SPOT_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id,
+                 :formatted_phone_number, :international_phone_number, :formatted_address,
+                 :address_components, :street_number, :street, :city, :region, :postal_code,
+                 :country, :rating, :url, :cid, :website, :reviews, :aspects, :zagat_selected,
+                 :zagat_reviewed, :review_summary, :nextpagetoken, :price_level,
+                 :opening_hours, :events, :utc_offset, :place_id].freeze
+
+  MORE_FIELDS = [:photos].freeze
+
   def self.perform(model)
-    response = @places_client.spots(model['coordinates'][1], model['coordinates'][0]) 
+    response = @places_client.spots(model['coordinates'][1], model['coordinates'][0], :name => model['title'])
     puts "Got response #{response} for location #{model['_id']}"
 
     batch_id = Time.now
@@ -22,8 +31,8 @@ module PlacesSearchJob
     create_params = {
       :location_id => location_id,
       :batch_id => batch_id,
-      :response_json => spot.to_json,
-      :timestamp => Time.now
+      :timestamp => Time.now,
+      :response => SPOT_FIELDS.inject({}) { |hash, field| hash[field] = spot[field]; hash }
     }
 
     @connection[GOOGLE_PLACES_RESPONSE_COLLECTION_NAME].insert(create_params)
