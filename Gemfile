@@ -7,6 +7,7 @@ gem 'unicorn'
 gem 'google_places'
 gem 'mongo-resque', require: 'resque'
 gem 'bson_ext'
+gem 'json'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'
