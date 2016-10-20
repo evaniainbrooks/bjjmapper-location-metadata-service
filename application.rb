@@ -43,7 +43,7 @@ before do
   halt 401 and return false unless params[:api_key] == API_KEY
 end
 
-post '/places/search' do
+post '/places/search/async' do
   content_type :json
 
   [:location_id].each do |arg|
