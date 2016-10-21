@@ -62,8 +62,10 @@ get '/places/reviews' do
   review_models = Review.find_all(settings.mongo_db, conditions)
   spot_model = Spot.find(settings.mongo_db, conditions)
 
+  halt 404 and return false if spot_model.nil?
+
   reviews = review_models.map do |model|
-    [:author_name, :author_url, :text, :time, :place_id].inject({}) do |hash, k|
+    [:author_name, :author_url, :text, :time, :place_id, :rating].inject({}) do |hash, k|
       hash[k] = model.send(k); hash
     end
   end unless review_models.nil?
@@ -73,6 +75,19 @@ get '/places/reviews' do
     review_summary: spot_model.review_summary,
     reviews: reviews
   }.to_json
+end
+
+get '/places/detail' do
+  content_type :json
+
+  conditions = {:bjjmapper_location_id => object_id(params[:location_id])}
+  spot_model = Spot.find(settings.mongo_db, conditions)
+
+  halt 404 and return false if spot_model.nil?
+
+  return [:lat, :lng, :name, :icon, :vicinity, :formatted_phone_number, :international_phone_number, :street_number, :street, :city, :region, :postal_code, :country, :rating, :url, :website, :review_summary, :price_level, :opening_hours, :utc_offset, :place_id].inject({}) do |hash, k|
+    hash[k] = spot_model.send(k); hash
+  end.to_json
 end
 
 post '/places/search/async' do
