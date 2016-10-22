@@ -15,5 +15,5 @@ group :test, :development do
   gem 'rvm1-capistrano3', require: false
   gem 'minitest', '~> 4.0'
   gem 'rack-test'
-  gem 'mocha, require: false'
+  gem 'mocha', require: false
 end
