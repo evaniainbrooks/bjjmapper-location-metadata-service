@@ -6,38 +6,39 @@ require './app/models/spot'
 require './app/models/review'
 require './app/models/photo'
 
-module PlacesSearchJob
+module GooglePlacesSearchJob
   @places_client = GooglePlaces::Client.new(GOOGLE_PLACES_API_KEY)
   @queue = QUEUE_NAME
   @connection = Mongo::MongoClient.new(DATABASE_HOST, DATABASE_PORT).db(DATABASE_APP_DB)
 
   def self.perform(model)
-    bjjmapper_location_id = model['_id']
+    bjjmapper_location_id = model['id']
     batch_id = Time.now
 
-    spot_response = find_best_spot(model)
-    puts "Fetching detailed information for #{spot_response.place_id}"
-    detailed_response = @places_client.spot(spot_response.place_id)
-    spot = build_spot(detailed_response, bjjmapper_location_id, batch_id)
+    find_best_spots(model).each do |spot|
+      puts "Fetching detailed information for #{spot_response.place_id}"
+      detailed_response = @places_client.spot(spot_response.place_id)
+      spot = build_spot(detailed_response, bjjmapper_location_id, batch_id)
 
-    detailed_response.reviews.each do |review_response|
-      review = build_review(review_response, bjjmapper_location_id, spot_response.place_id)
-      review.save(@connection)
+      detailed_response.reviews.each do |review_response|
+        review = build_review(review_response, bjjmapper_location_id, spot_response.place_id)
+        review.save(@connection)
+      end
+
+      detailed_response.photos.each do |photo_response|
+        photo = build_photo(photo_response, bjjmapper_location_id, spot_response.place_id)
+        photo.save(@connection)
+      end
+
+      spot.save(@connection)
     end
-
-    detailed_response.photos.each do |photo_response|
-      photo = build_photo(photo_response, bjjmapper_location_id, spot_response.place_id)
-      photo.save(@connection)
-    end
-
-    spot.save(@connection)
   end
 
   private
 
-  def self.find_best_spot(model)
-    lat = model['coordinates'][1]
-    lng = model['coordinates'][0]
+  def self.find_best_spots(model)
+    lat = model['lat']
+    lng = model['lng']
     title = model['title']
 
     spot_responses = @places_client.spots(lat, lng, name: title)
@@ -49,18 +50,13 @@ module PlacesSearchJob
 
     if spot_responses.count > 1
       puts "WARNING: Found more than one (#{spot_responses.count}) spot, choosing closest"
-      sorted = spot_responses.sort_by do |spot|
+      spot_responses.sort_by! do |spot|
         distance = circle_distance(lat, lng, spot.lat, spot.lng)
       end
-
-      spot_responses.drop(1).each do |discarded_spot|
-        puts "Discarding #{discarded_spot.name}"
-      end
-
-      sorted.first
-    else
-      spot_responses.first
     end
+    
+    spot_responses.first.primary = true
+    spot_responses
   end
 
   def self.circle_distance(lat0, lng0, lat1, lng1)

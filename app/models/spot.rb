@@ -13,5 +13,5 @@ class Spot
                  :zagat_reviewed, :review_summary, :nextpagetoken, :price_level,
                  :opening_hours, :events, :utc_offset, :place_id
 
-  attr_accessor  :_id, :bjjmapper_location_id, :batch_id
+  attr_accessor  :_id, :bjjmapper_location_id, :batch_id, :primary
 end

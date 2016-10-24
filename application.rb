@@ -6,7 +6,8 @@ require 'resque'
 require 'google_places'
 
 require './config'
-require './places_search_job'
+require './google_places_search_job'
+require './facebook_graph_search_job'
 
 require './app/models/review'
 require './app/models/spot'
@@ -40,26 +41,31 @@ before { content_type :json }
 before { halt 401 and return false unless params[:api_key] == APP_API_KEY }
 
 get '/locations/:bjjmapper_location_id/photos' do
-  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
-  photo_models = Photo.find_all(settings.mongo_db, conditions)
+  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
+  spot_model = Spot.find(settings.mongo_db, conditions)
 
-  halt 404 and return false if photo_models.nil?
+  halt 404 and return false if spot_model.nil?
+
+  photo_conditions = {place_id: bson_id(spot_model.place_id)}
+  photo_models = Photo.find_all(settings.mongo_db, photo_conditions)
 
   Responses::PhotosResponse.respond(spot_model, reviews_model)
 end
 
 get '/locations/:bjjmapper_location_id/reviews' do
-  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
-  review_models = Review.find_all(settings.mongo_db, conditions)
+  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
   spot_model = Spot.find(settings.mongo_db, conditions)
 
   halt 404 and return false if spot_model.nil?
+
+  review_conditions = {place_id: bson_id(spot_model.place_id)}
+  review_models = Review.find_all(settings.mongo_db, review_conditions)
 
   Responses::ReviewsResponse.respond(spot_model, reviews_model)
 end
 
 get '/locations/:bjjmapper_location_id/detail' do
-  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
+  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
   spot_model = Spot.find(settings.mongo_db, conditions)
 
   halt 404 and return false if spot_model.nil?
@@ -69,7 +75,9 @@ end
 
 before '/search/async' { halt 400 and return false unless params[:location] }
 post '/search/async' do
-  Resque.enqueue(PlacesSearchJob, JSON.parse(params[:location]))
+  location = JSON.parse(params[:location])
+  Resque.enqueue(GooglePlacesSearchJob, location)
+  Resque.enqueue(FacebookGraphSearchJob, location)
 
   status 202
 end

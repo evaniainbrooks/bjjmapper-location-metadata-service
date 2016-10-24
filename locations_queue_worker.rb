@@ -1,7 +1,8 @@
 require 'resque'
 require 'mongo'
 require './config'
-require './places_search_job'
+require './google_places_search_job'
+require './facebook_graph_search_job'
 
 include Mongo
 
