@@ -78,6 +78,7 @@ DEPENDENCIES
   capistrano-bundler
   foreman
   google_places
+  json
   minitest (~> 4.0)
   mocha
   mongo-resque

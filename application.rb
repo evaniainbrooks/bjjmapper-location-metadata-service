@@ -10,6 +10,7 @@ require './places_search_job'
 
 require './app/models/review'
 require './app/models/spot'
+require './app/models/photo'
 
 include Mongo
 
@@ -18,85 +19,57 @@ configure do
   set :bind, '0.0.0.0'
   set :port, ENV['PORT']
 
+  set :app_database_name, DATABASE_APP_DB
   set :resque_database_name, DATABASE_QUEUE_DB
-  set :database_name, DATABASE_APP_DB
 
   connection = MongoClient.new(DATABASE_HOST, DATABASE_PORT)
   set :mongo_connection, connection
-  set :mongo_db, connection.db(settings.database_name)
+  set :app_db, connection.db(settings.app_database_name)
   set :queue_db, connection.db(settings.resque_database_name)
 
   Resque.mongo = settings.queue_db
 end
 
 helpers do
-  # a helper method to turn a string ID
-  # representation into a BSON::ObjectId
-  def object_id val
+  def bson_id val
     BSON::ObjectId.from_string(val)
   end
-
-  def document_by_id id, collection
-    id = object_id(id) if String === id
-    settings.mongo_db[collection].find_one(:_id => id)
-  end
 end
 
-before do
-  halt 401 and return false unless params[:api_key] == API_KEY
+before { content_type :json }
+before { halt 401 and return false unless params[:api_key] == APP_API_KEY }
+
+get '/locations/:bjjmapper_location_id/photos' do
+  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
+  photo_models = Photo.find_all(settings.mongo_db, conditions)
+
+  halt 404 and return false if photo_models.nil?
+
+  Responses::PhotosResponse.respond(spot_model, reviews_model)
 end
 
-before do
-  [:location_id].each do |arg|
-    unless params[arg]
-      STDERR.puts "Missing #{arg}, returning 400"
-      halt 400 and return false
-    end
-  end
-end
-
-get '/places/reviews' do
-  content_type :json
-
-  conditions = {:bjjmapper_location_id => object_id(params[:location_id])}
+get '/locations/:bjjmapper_location_id/reviews' do
+  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
   review_models = Review.find_all(settings.mongo_db, conditions)
   spot_model = Spot.find(settings.mongo_db, conditions)
 
   halt 404 and return false if spot_model.nil?
 
-  reviews = review_models.map do |model|
-    [:author_name, :author_url, :text, :time, :place_id, :rating].inject({}) do |hash, k|
-      hash[k] = model.send(k); hash
-    end
-  end unless review_models.nil?
-
-  return {
-    rating: spot_model.rating,
-    review_summary: spot_model.review_summary,
-    reviews: reviews
-  }.to_json
+  Responses::ReviewsResponse.respond(spot_model, reviews_model)
 end
 
-get '/places/detail' do
-  content_type :json
-
-  conditions = {:bjjmapper_location_id => object_id(params[:location_id])}
+get '/locations/:bjjmapper_location_id/detail' do
+  conditions = {bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
   spot_model = Spot.find(settings.mongo_db, conditions)
 
   halt 404 and return false if spot_model.nil?
 
-  return [:lat, :lng, :name, :icon, :vicinity, :formatted_phone_number, :international_phone_number, :street_number, :street, :city, :region, :postal_code, :country, :rating, :url, :website, :review_summary, :price_level, :opening_hours, :utc_offset, :place_id].inject({}) do |hash, k|
-    hash[k] = spot_model.send(k); hash
-  end.to_json
+  return Responses::DetailResponse.respond(spot_model)
 end
 
-post '/places/search/async' do
-  content_type :json
-
-  model = document_by_id(params[:location_id], 'locations')
-  halt 404 if model.nil?
-
-  Resque.enqueue(PlacesSearchJob, model)
+before '/search/async' { halt 400 and return false unless params[:location] }
+post '/search/async' do
+  Resque.enqueue(PlacesSearchJob, JSON.parse(params[:location]))
 
   status 202
 end

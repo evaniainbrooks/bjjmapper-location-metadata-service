@@ -5,7 +5,7 @@ require './places_search_job'
 
 include Mongo
 
-WAIT_INTERVAL = 10.0
+WAIT_INTERVAL = 30.0
 RESQUE_LOCATIONS_QUEUE = "locations"
 
 Resque.mongo = MongoClient.new(DATABASE_HOST , DATABASE_PORT).db(DATABASE_QUEUE_DB)
