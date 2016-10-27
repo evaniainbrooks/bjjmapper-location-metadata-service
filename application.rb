@@ -3,15 +3,21 @@ require 'sinatra'
 require 'mongo'
 require 'json/ext'
 require 'resque'
-require 'google_places'
 
 require './config'
-require './google_places_search_job'
-require './facebook_graph_search_job'
+require './app/jobs/google_places_search_job'
+require './app/jobs/yelp_search_job'
 
-require './app/models/review'
-require './app/models/spot'
-require './app/models/photo'
+require './app/models/google_places_review'
+require './app/models/google_places_spot'
+require './app/models/google_places_photo'
+
+require './app/models/yelp_business'
+require './app/models/yelp_review'
+
+require './app/models/responses/reviews_response'
+require './app/models/responses/photos_response'
+require './app/models/responses/detail_response'
 
 include Mongo
 
@@ -31,53 +37,82 @@ configure do
   Resque.mongo = settings.queue_db
 end
 
-helpers do
-  def bson_id val
-    BSON::ObjectId.from_string(val)
-  end
-end
-
+#
+# Global before
+#
 before { content_type :json }
 before { halt 401 and return false unless params[:api_key] == APP_API_KEY }
 
+#
+# Locations before (set location)
+#
+before '/locations/:bjjmapper_location_id/*' do
+  id = params[:bjjmapper_location_id]
+  conditions = {primary: true, bjjmapper_location_id: id}
+
+  @spot = GooglePlacesSpot.find(settings.app_db, conditions)
+  @yelp_business = YelpBusiness.find(settings.app_db, conditions)
+end
+
+before '/locations/*' do
+  if @spot.nil? && @yelp_business.nil?
+    puts "No listings found"
+    halt 404 and return false
+  end
+end
+
+#
+# Locations routes
+#
 get '/locations/:bjjmapper_location_id/photos' do
-  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
-  spot_model = Spot.find(settings.mongo_db, conditions)
+  photo_conditions = {place_id: @spot.place_id}
+  photo_models = GooglePlacesPhoto.find_all(settings.app_db, photo_conditions)
 
-  halt 404 and return false if spot_model.nil?
-
-  photo_conditions = {place_id: bson_id(spot_model.place_id)}
-  photo_models = Photo.find_all(settings.mongo_db, photo_conditions)
-
-  Responses::PhotosResponse.respond(spot_model, reviews_model)
+  Responses::PhotosResponse.respond(@spot, photo_models)
 end
 
 get '/locations/:bjjmapper_location_id/reviews' do
-  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
-  spot_model = Spot.find(settings.mongo_db, conditions)
+  unless @spot.nil?
+    google_review_conditions = {place_id: @spot.place_id}
+    @google_reviews = GooglePlacesReview.find_all(settings.app_db, google_review_conditions)
+  end
 
-  halt 404 and return false if spot_model.nil?
+  unless @yelp_business.nil?
+    yelp_review_conditions = {yelp_id: @yelp_business.yelp_id}
+    @yelp_reviews = YelpReview.find_all(settings.app_db, yelp_review_conditions)
+  end
 
-  review_conditions = {place_id: bson_id(spot_model.place_id)}
-  review_models = Review.find_all(settings.mongo_db, review_conditions)
-
-  Responses::ReviewsResponse.respond(spot_model, reviews_model)
+  Responses::ReviewsResponse.respond(
+    {google: @spot, yelp: @yelp_business},
+    {google: @google_reviews, yelp: @yelp_reviews}
+  )
 end
 
 get '/locations/:bjjmapper_location_id/detail' do
-  conditions = {primary: true, bjjmapper_location_id: bson_id(params[:bjjmapper_location_id])}
-  spot_model = Spot.find(settings.mongo_db, conditions)
-
-  halt 404 and return false if spot_model.nil?
-
-  return Responses::DetailResponse.respond(spot_model)
+  return Responses::DetailResponse.respond({google: @spot, yelp: @yelp_business})
 end
 
-before '/search/async' { halt 400 and return false unless params[:location] }
+#
+# Search before
+#
+before '/search/async' do
+  begin
+    request.body.rewind
+    body = JSON.parse(request.body.read)
+    @location = body['location']
+  ensure
+    halt 400 and return false unless @location
+  end
+end
+
+#
+# Search routes
+#
 post '/search/async' do
-  location = JSON.parse(params[:location])
-  Resque.enqueue(GooglePlacesSearchJob, location)
-  Resque.enqueue(FacebookGraphSearchJob, location)
+  scope = params[:scope]
+
+  Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
+  Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
 
   status 202
 end

@@ -1,6 +1,6 @@
 require './app/models/mongo_document'
 
-class Spot
+class GooglePlacesSpot
   include MongoDocument
   COLLECTION_NAME = 'google_places_spots'
 

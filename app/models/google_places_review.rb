@@ -1,6 +1,6 @@
 require './app/models/mongo_document'
 
-class Review
+class GooglePlacesReview
   include MongoDocument
   COLLECTION_NAME = 'google_places_reviews'
   

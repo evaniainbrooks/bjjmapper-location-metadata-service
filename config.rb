@@ -5,5 +5,12 @@ DATABASE_QUEUE_DB = 'resque'
 
 QUEUE_NAME = "locations"
 
-GOOGLE_PLACES_API_KEY = "AIzaSyAuLA-LpDpafAs7p0XH4nE8yj__Rr2oD0s"
+GOOGLE_PLACES_API_KEY = ENV['GOOGLE_PLACES_API_KEY']
+YELP_API_KEY = {
+  consumer_key: ENV['YELP_API_CONSUMER_KEY'],
+  consumer_secret: ENV['YELP_API_CONSUMER_SECRET'],
+  token: ENV['YELP_API_TOKEN'],
+  token_secret: ENV['YELP_API_TOKEN_SECRET']
+}.freeze
+
 APP_API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"

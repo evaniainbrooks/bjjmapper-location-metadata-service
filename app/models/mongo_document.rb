@@ -2,22 +2,28 @@ module MongoDocument
   def self.included(base)
     base.extend ClassMethods
   end
-  
+
   module ClassMethods
     def find(connection, conditions)
       model_attrs = connection[self.const_get(:COLLECTION_NAME)].find_one(conditions)
+      
+      return nil if model_attrs.nil?
       return self.new(model_attrs)
     end
 
     def find_all(connection, conditions)
-      puts "Searching for #{conditions} in #{self.const_get(:COLLECTION_NAME)}"
-
       models_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions)
+      
+      return nil if models_attrs.nil?
       return models_attrs.map { |model_attrs| self.new(model_attrs) }
     end
   end
 
   def initialize(attributes)
+    self.merge_attributes!(attributes)
+  end
+
+  def merge_attributes!(attributes)
     attributes = attributes.instance_variables.inject({}) do |hash, k|
       key = k[1..-1]
       hash[key] = attributes.instance_variable_get(k); hash
