@@ -10,5 +10,5 @@ set :app_file,    app_file
 set :server,      'thin'
 disable :run
 
-run Sinatra::Application
+run LocationFetchService::Application 
 

@@ -1,4 +1,4 @@
-require './app/models/mongo_document'
+require_relative 'mongo_document'
 
 class YelpBusiness
   include MongoDocument

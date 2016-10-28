@@ -1,19 +1,19 @@
 require 'resque'
 require 'mongo'
 require 'yelp'
-require './config'
-require './app/models/yelp_business'
-require './app/models/yelp_review'
+require_relative '../../config'
+require_relative '../models/yelp_business'
+require_relative '../models/yelp_review'
 
 module YelpSearchJob
   @client = Yelp::Client.new({
-    consumer_key: YELP_API_KEY[:consumer_key],
-    consumer_secret: YELP_API_KEY[:consumer_secret],
-    token: YELP_API_KEY[:token],
-    token_secret: YELP_API_KEY[:token_secret]
+    consumer_key: LocationFetchService::YELP_API_KEY[:consumer_key],
+    consumer_secret: LocationFetchService::YELP_API_KEY[:consumer_secret],
+    token: LocationFetchService::YELP_API_KEY[:token],
+    token_secret: LocationFetchService::YELP_API_KEY[:token_secret]
   })
-  @queue = QUEUE_NAME
-  @connection = Mongo::MongoClient.new(DATABASE_HOST, DATABASE_PORT).db(DATABASE_APP_DB)
+  @queue = LocationFetchService::QUEUE_NAME
+  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
   def self.perform(model)
     bjjmapper_location_id = model['id']

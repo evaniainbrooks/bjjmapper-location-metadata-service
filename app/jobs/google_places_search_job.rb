@@ -1,15 +1,15 @@
 require 'resque'
 require 'mongo'
 require 'google_places'
-require './config'
-require './app/models/google_places_spot'
-require './app/models/google_places_review'
-require './app/models/google_places_photo'
+require_relative '../../config'
+require_relative '../models/google_places_spot'
+require_relative '../models/google_places_review'
+require_relative '../models/google_places_photo'
 
 module GooglePlacesSearchJob
-  @places_client = GooglePlaces::Client.new(GOOGLE_PLACES_API_KEY)
-  @queue = QUEUE_NAME
-  @connection = Mongo::MongoClient.new(DATABASE_HOST, DATABASE_PORT).db(DATABASE_APP_DB)
+  @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
+  @queue = LocationFetchService::QUEUE_NAME
+  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
   DISTANCE_THRESHOLD = 2 # miles
   LARGE_IMAGE_WIDTH = 500
