@@ -1,0 +1,14 @@
+---
+chdir: "/var/www/rollfindr_locationfetchsvc"
+environment: production
+address: 127.0.0.1
+port: 9004
+timeout: 30
+log: "/var/www/rollfindr/current/shared/log/locationfetchsvc.log"
+pid: "/var/www/rollfindr/current/shared/tmp/pids/locationfetchsvc.pid"
+max_conns: 1024
+max_persistent_conns: 100
+require: []
+wait: 30
+threadpool_size: 20
+daemonize: true

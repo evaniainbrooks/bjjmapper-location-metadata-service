@@ -10,6 +10,7 @@ gem 'bson_ext'
 gem 'json'
 gem 'koala', '~> 2.2'
 gem 'yelp'
+gem 'thin'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'
