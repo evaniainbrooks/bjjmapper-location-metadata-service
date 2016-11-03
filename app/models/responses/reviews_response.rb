@@ -8,23 +8,8 @@ module Responses
     end
 
     def self.build_reviews_hash(review_models)
-      google_reviews = review_models[:google].map do |model|
-        [:author_name, :author_url, :text, :time, :place_id, :rating].inject({}) do |hash, k|
-          hash[k] = model.send(k); hash
-        end.merge(source: 'Google')
-      end unless review_models[:google].nil?
-      
-      yelp_reviews = review_models[:yelp].map do |model|
-        {
-          author_name: model.user_name,
-          author_url: "https://www.yelp.com/user_details?userid=#{model.user_id}",
-          text: model.excerpt,
-          rating: model.rating,
-          time: model.time_created,
-          yelp_id: model.yelp_id,
-          source: 'Yelp'
-        }
-      end unless review_models[:yelp].nil?
+      google_reviews = review_models[:google].map {|o|o.as_json} unless review_models[:google].nil?
+      yelp_reviews = review_models[:yelp].map {|o|o.as_json} unless review_models[:yelp].nil?
 
       [].concat(google_reviews || []).concat(yelp_reviews || []).compact
     end

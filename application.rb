@@ -22,6 +22,8 @@ require_relative 'app/models/responses/detail_response'
 include Mongo
 
 module LocationFetchService
+  WORKERS = ['locations_queue_worker']
+
   class Application < Sinatra::Application
     configure do
       set :app_file, __FILE__

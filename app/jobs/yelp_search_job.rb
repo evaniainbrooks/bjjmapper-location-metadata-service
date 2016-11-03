@@ -50,7 +50,7 @@ module YelpSearchJob
     lng = model['lng']
     title = model['title']
 
-    response = @client.search_by_coordinates({ latitude: lat, longitude: lng }, { term: title })
+    response = @client.search_by_coordinates({ latitude: lat, longitude: lng }, { term: title, category_filter: 'martialarts' })
     puts "Search returned #{response.businesses.count} listings"
 
     response.businesses

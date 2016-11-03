@@ -14,5 +14,14 @@ class YelpBusiness
     :cross_streets, :neighborhoods, :lat, :lng
 
   attr_accessor :_id, :bjjmapper_location_id, :batch_id, :primary
+
+  def as_json
+    {
+      source: 'Yelp', lat: lat, lng: lng, name: name, icon: snippet_image_url,
+      is_closed: is_closed, is_claimed: is_claimed, formatted_phone_number: phone,
+      international_phone_number: display_phone, city: city, country: country_code, 
+      postal_code: postal_code, state: state_code, address: address.join(" "), yelp_id: yelp_id
+    }
+  end
 end
 
