@@ -4,9 +4,12 @@ require 'mongo'
 require 'json/ext'
 require 'resque'
 
-require_relative 'config'
+require_relative './config'
 require_relative 'app/jobs/google_places_search_job'
 require_relative 'app/jobs/yelp_search_job'
+require_relative 'app/jobs/identify_candidate_locations_job'
+require_relative 'app/jobs/yelp_fetch_and_associate_job'
+require_relative 'app/jobs/google_fetch_and_associate_job'
 
 require_relative 'app/models/google_places_review'
 require_relative 'app/models/google_places_spot'
@@ -93,7 +96,58 @@ module LocationFetchService
     end
 
     get '/locations/:bjjmapper_location_id/detail' do
-      return Responses::DetailResponse.respond({google: @spot, yelp: @yelp_business})
+      combined = (params[:combined] || 0).to_i == 1 ? true : false
+      return Responses::DetailResponse.respond(
+        {google: @spot, yelp: @yelp_business}, 
+        combined)
+    end
+    
+    post '/locations/:bjjmapper_location_id/associate' do
+      if params[:google_id]
+        puts "Checking google association"
+        if @spot && params[:google_id] != @spot.place_id
+          puts "Updating existing listing #{@spot.place_id}"
+          @spot.update(settings.app_db, {:primary => false})
+        end
+        
+        location_id = params[:bjjmapper_location_id]
+        conditions = {place_id: params[:google_id]}
+        new_spot = GooglePlacesSpot.find(settings.app_db, conditions)
+        if !new_spot.nil?
+          puts "New associated listing exists #{new_spot.place_id}"
+          new_spot.update(settings.app_db, {:bjjmapper_location_id => location_id, :primary => true})
+        else
+          puts "New associated listing does not exist, fetching"
+          Resque.enqueue(GoogleFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            place_id: params[:google_id]
+          })
+        end
+      end
+      
+      if params[:yelp_id]
+        puts "Checking Yelp association"
+        if @yelp_business && params[:yelp_id] != @yelp_business.yelp_id
+          puts "Updating existing listing #{@yelp_business.yelp_id}"
+          @yelp_business.update(settings.app_db, {:primary => false})
+        end
+        
+        location_id = params[:bjjmapper_location_id]
+        conditions = {yelp_id: params[:yelp_id]}
+        new_spot = YelpBusiness.find(settings.app_db, conditions)
+        if !new_spot.nil?
+          puts "New associated listing exists #{new_spot.yelp_id}"
+          new_spot.update(settings.app_db, {:bjjmapper_location_id => location_id, :primary => true})
+        else
+          puts "New associated listing does not exist, fetching"
+          Resque.enqueue(YelpFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            yelp_id: params[:yelp_id]
+          })
+        end
+      end
+
+      status 202
     end
 
     #
@@ -115,9 +169,12 @@ module LocationFetchService
     post '/search/async' do
       scope = params[:scope]
 
-      Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
-      Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
-
+      if @location['id'].nil?
+        Resque.enqueue(IdentifyCandidateLocationsJob, @location)
+      else
+        Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
+        Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
+      end
       status 202
     end
   end

@@ -20,6 +20,11 @@ module GooglePlacesSearchJob
     batch_id = Time.now
 
     spots = find_best_spots(model)
+    if spots.nil?
+      puts "Couldn't find anything"
+      return
+    end
+
     spots.first.tap do |spot|
       puts "Fetching detailed information for #{spot.place_id}"
       detailed_response = @places_client.spot(spot.place_id)
@@ -76,6 +81,7 @@ module GooglePlacesSearchJob
       end
     end
 
+    return nil unless spots.count > 0
     spots
   end
 

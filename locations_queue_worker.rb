@@ -1,8 +1,14 @@
+require 'dotenv'
+Dotenv.load
+
 require 'resque'
 require 'mongo'
 require './config'
 require './app/jobs/google_places_search_job'
 require './app/jobs/yelp_search_job'
+require './app/jobs/identify_candidate_locations_job'
+require './app/jobs/google_fetch_and_associate_job'
+require './app/jobs/yelp_fetch_and_associate_job'
 
 include Mongo
 

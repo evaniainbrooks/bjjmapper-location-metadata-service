@@ -34,6 +34,10 @@ module MongoDocument
     end
   end
 
+  def update(connection, update_params)
+    connection[self.class.const_get(:COLLECTION_NAME)].update({'_id' => self._id}, {'$set' => update_params})
+  end
+
   def save(connection)
     if !self._id
       self.send(:insert, connection)
