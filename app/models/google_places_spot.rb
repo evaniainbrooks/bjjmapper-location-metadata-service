@@ -23,6 +23,6 @@ class GooglePlacesSpot
     SLICE_ATTRIBUTES.inject({}) do |hash, k|
       hash[k] = self.send(k) if self.respond_to?(k)
       hash
-    end
+    end.merge(title: self.name)
   end
 end

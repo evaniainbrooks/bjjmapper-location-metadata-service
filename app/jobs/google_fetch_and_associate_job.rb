@@ -16,8 +16,8 @@ module GoogleFetchAndAssociateJob
   IMAGE_WIDTH = 100
 
   def self.perform(model)
-    bjjmapper_location_id = model[:bjjmapper_location_id]
-    listing = @client.business(model[:yelp_id])
+    bjjmapper_location_id = model['bjjmapper_location_id']
+    listing = @client.business(model['yelp_id'])
     detailed_listing = build_listing(listing.business, bjjmapper_location_id)
     detailed_listing.business.reviews.each do |review_response|
       review = build_review(review_response, bjjmapper_location_id, listing.id)
@@ -37,7 +37,7 @@ module GoogleFetchAndAssociateJob
     end
   end
 
-  def self.build_spot(response, location_id)
+  def self.build_listing(response, location_id)
     GooglePlacesSpot.new(response).tap do |o|
       o.bjjmapper_location_id = location_id
     end

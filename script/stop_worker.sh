@@ -1,2 +1,2 @@
 #!/bin/bash
-kill -s SIGTERM `cat daemons/images_queue_worker.pid`
+kill -s SIGTERM `cat /var/www/rollfindr/shared/tmp/pids/locations_queue_worker.pid`

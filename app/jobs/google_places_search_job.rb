@@ -5,6 +5,7 @@ require_relative '../../config'
 require_relative '../models/google_places_spot'
 require_relative '../models/google_places_review'
 require_relative '../models/google_places_photo'
+require_relative '../../lib/circle_distance'
 
 module GooglePlacesSearchJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
@@ -42,7 +43,7 @@ module GooglePlacesSearchJob
         photo.save(@connection)
       end
 
-      if circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) > DISTANCE_THRESHOLD
+      if Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) > DISTANCE_THRESHOLD
         puts "WARNING: primary spot #{spot.place_id} is more than #{DISTANCE_THRESHOLD}mi from the location"
       end
 
@@ -76,18 +77,13 @@ module GooglePlacesSearchJob
       if spots.count > 1
         puts "WARNING: Found more than one (#{spots.count}) spot, choosing closest"
         spots.sort_by! do |spot|
-          distance = circle_distance(lat, lng, spot.lat, spot.lng)
+          distance = Math.circle_distance(lat, lng, spot.lat, spot.lng)
         end
       end
     end
 
     return nil unless spots.count > 0
     spots
-  end
-
-  def self.circle_distance(lat0, lng0, lat1, lng1)
-    r = 3963.0
-    return r * Math.acos(Math.sin(lat0) * Math.sin(lat1) + Math.cos(lat0) * Math.cos(lat1) * Math.cos(lng1 - lng0))
   end
 
   def self.build_photo(response, location_id, place_id)

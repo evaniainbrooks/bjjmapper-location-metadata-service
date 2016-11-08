@@ -16,11 +16,11 @@ module YelpFetchAndAssociateJob
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
   def self.perform(model)
-    bjjmapper_location_id = model[:bjjmapper_location_id]
-    listing = @client.business(model[:yelp_id])
+    bjjmapper_location_id = model['bjjmapper_location_id']
+    listing = @client.business(model['yelp_id'])
     detailed_listing = build_listing(listing.business, bjjmapper_location_id)
-    detailed_listing.business.reviews.each do |review_response|
-      review = build_review(review_response, bjjmapper_location_id, listing.id)
+    listing.business.reviews.each do |review_response|
+      review = build_review(review_response, bjjmapper_location_id, detailed_listing.yelp_id)
       puts "Storing review #{review.inspect}"
       review.save(@connection)
     end
