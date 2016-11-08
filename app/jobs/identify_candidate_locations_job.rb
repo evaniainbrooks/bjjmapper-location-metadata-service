@@ -49,7 +49,7 @@ module IdentifyCandidateLocationsJob
         })
       else
         puts "Creating candidate location #{listing.name}"
-        @bjjmapper.create_pending_location({
+        response = @bjjmapper.create_pending_location({
           title: listing.name,
           coordinates: [listing.lng, listing.lat],
           street: listing.address,
@@ -61,6 +61,8 @@ module IdentifyCandidateLocationsJob
           phone: listing.phone || listing.display_phone,
           flag_closed: listing.is_closed
         })
+
+        listing.bjjmapper_id = response['id']
       end
 
       listing.save(@connection)
