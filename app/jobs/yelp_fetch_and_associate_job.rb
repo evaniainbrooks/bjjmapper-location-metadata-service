@@ -23,7 +23,7 @@ module YelpFetchAndAssociateJob
       review = build_review(review_response, bjjmapper_location_id, detailed_listing.yelp_id)
       puts "Storing review #{review.inspect}"
       review.save(@connection)
-    end
+    end unless listing.business.reviews.nil?
     puts "Storing listing #{detailed_listing.inspect}"
     detailed_listing.save(@connection)
   end
