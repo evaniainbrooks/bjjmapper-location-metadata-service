@@ -12,14 +12,31 @@ require './app/jobs/yelp_fetch_and_associate_job'
 
 include Mongo
 
-WAIT_INTERVAL = 10.0
-RESQUE_LOCATIONS_QUEUE = "locations"
+module LocationFetchService
+  class LocationsQueueWorker < Resque::Worker
+    WAIT_INTERVAL = 10.0
+    RESQUE_LOCATIONS_QUEUE = "locations"
+  
+    def initialize
+      super(RESQUE_LOCATIONS_QUEUE)
+    end
 
-Resque.mongo = MongoClient.new(LocationFetchService::DATABASE_HOST , LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_QUEUE_DB)
+    def work
+      super(WAIT_INTERVAL)
+    end
 
-STDOUT.puts "Starting locations queue worker on #{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_QUEUE_DB}"
+    def self.run(mongo)
+      STDOUT.puts "Starting locations queue worker on #{mongo.inspect}"
 
-worker = Resque::Worker.new(RESQUE_LOCATIONS_QUEUE)
-worker.verbose = worker.very_verbose = true
-worker.work(WAIT_INTERVAL)
+      Resque.mongo = mongo
+      worker = LocationFetchService::LocationsQueueWorker.new
+      worker.verbose = worker.very_verbose = true
+      worker.work
+    end
+  end
+end
 
+if $0 == __FILE__
+  mongo = MongoClient.new(LocationFetchService::DATABASE_HOST , LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_QUEUE_DB)
+  LocationFetchService::LocationsQueueWorker.run(mongo)
+end

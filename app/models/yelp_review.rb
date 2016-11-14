@@ -16,7 +16,8 @@ class YelpReview
       time: self.time_created,
       yelp_id: self.yelp_id,
       yelp_review_id: self.yelp_review_id,
-      source: 'Yelp'
+      source: 'Yelp',
+      key: "Yelp#{self.time_created.to_i}"
     }
   end
 end

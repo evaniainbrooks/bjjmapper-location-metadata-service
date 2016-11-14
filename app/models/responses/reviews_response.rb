@@ -8,10 +8,10 @@ module Responses
     end
 
     def self.build_reviews_hash(review_models)
-      google_reviews = review_models[:google].map {|o|o.as_json} unless review_models[:google].nil?
-      yelp_reviews = review_models[:yelp].map {|o|o.as_json} unless review_models[:yelp].nil?
-
-      [].concat(google_reviews || []).concat(yelp_reviews || []).compact
+      review_models.keys.inject([]) do |arr, src|
+        reviews = review_models[src].map{|o|o.as_json} unless review_models[src].nil?
+        arr.concat(reviews || [])
+      end.uniq{|o|o[:key]}
     end
 
     def self.calculate_total_rating(spot_models, review_models)

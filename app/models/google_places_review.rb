@@ -10,6 +10,6 @@ class GooglePlacesReview
   def as_json
     [:author_name, :author_url, :text, :time, :place_id, :rating].inject({}) do |hash, k|
       hash[k] = self.send(k); hash
-    end.merge(source: 'google')
+    end.merge(source: 'Google', key: "Google#{self.send(:time)}")
   end
 end
