@@ -89,7 +89,7 @@ module LocationFetchService
         @yelp_reviews = YelpReview.find_all(settings.app_db, yelp_review_conditions)
       end
 
-      Responses::ReviewsResponse.respond(
+      return Responses::ReviewsResponse.respond(
         {google: @spot, yelp: @yelp_business},
         {google: @google_reviews, yelp: @yelp_reviews}
       )

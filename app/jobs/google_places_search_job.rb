@@ -12,7 +12,7 @@ module GooglePlacesSearchJob
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
-  DISTANCE_THRESHOLD = 2 # miles
+  DISTANCE_THRESHOLD_MI = 0.4 # miles
   LARGE_IMAGE_WIDTH = 500
   IMAGE_WIDTH = 100
 
@@ -21,7 +21,7 @@ module GooglePlacesSearchJob
     batch_id = Time.now
 
     spots = find_best_spots(model)
-    if spots.nil?
+    if spots.nil? || spots.count == 0
       puts "Couldn't find anything"
       return
     end
@@ -34,29 +34,29 @@ module GooglePlacesSearchJob
       detailed_response.reviews.each do |review_response|
         review = build_review(review_response, bjjmapper_location_id, spot.place_id)
         puts "Storing review #{review.inspect}"
-        review.save(@connection)
+        review.upsert(@connection, place_id: spot.place_id, time: review.time, author_name: review.author_name)
       end
 
       detailed_response.photos.each do |photo_response|
         photo = build_photo(photo_response, bjjmapper_location_id, spot.place_id)
         puts "Storing photo #{photo.inspect}"
-        photo.save(@connection)
+        photo.upsert(@connection, place_id: spot.place_id, photo_reference: photo.photo_reference)
       end
 
-      if Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) > DISTANCE_THRESHOLD
-        puts "WARNING: primary spot #{spot.place_id} is more than #{DISTANCE_THRESHOLD}mi from the location"
+      if Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) < DISTANCE_THRESHOLD_MI
+        puts "WARNING: primary spot #{spot.place_id} is #{DISTANCE_THRESHOLD_MI}mi from the location"
+        puts "Storing primary spot #{spot.place_id}"
+        spot.primary = true
       end
 
-      puts "Storing primary spot #{spot.place_id}"
-      spot.primary = true
-      spot.save(@connection)
+      spot.upsert(@connection, place_id: spot.place_id)
     end
 
     spots.drop(1).each do |spot|
       puts "Storing secondary spot #{spot.place_id}"
       build_spot(spot, bjjmapper_location_id, batch_id).tap do |spot|
         spot.primary = false
-        spot.save(@connection)
+        spot.upsert(@connection, place_id: spot.place_id)
       end
     end
   end
@@ -69,6 +69,7 @@ module GooglePlacesSearchJob
     title = model['title']
     bjjmapper_location_id = model['id']
 
+    puts "Searching for spots"
     spots = @places_client.spots(lat, lng, name: title)
     puts "Got response #{spots.count} spots for location #{bjjmapper_location_id} (using title)"
     if spots.nil?

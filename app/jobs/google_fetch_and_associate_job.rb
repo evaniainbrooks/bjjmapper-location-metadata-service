@@ -11,21 +11,20 @@ module GoogleFetchAndAssociateJob
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
   
-  DISTANCE_THRESHOLD = 2 # miles
   LARGE_IMAGE_WIDTH = 500
   IMAGE_WIDTH = 100
 
   def self.perform(model)
     bjjmapper_location_id = model['bjjmapper_location_id']
-    listing = @client.business(model['yelp_id'])
-    detailed_listing = build_listing(listing.business, bjjmapper_location_id)
-    detailed_listing.business.reviews.each do |review_response|
+    listing = @places_client.spot(model['place_id'])
+    detailed_listing = build_listing(listing, bjjmapper_location_id)
+    detailed_listing.reviews.each do |review_response|
       review = build_review(review_response, bjjmapper_location_id, listing.id)
       puts "Storing review #{review.inspect}"
-      review.save(@connection)
+      review.upsert(@connection, place_id: detailed_listing.place_id, author_name: review.author_name, time: review.time)
     end
     puts "Storing listing #{detailed_listing.inspect}"
-    detailed_listing.save(@connection)
+    detailed_listing.upsert(@connection, place_id: detailed_listing.place_id)
   end
 
   def self.build_photo(response, location_id, place_id)

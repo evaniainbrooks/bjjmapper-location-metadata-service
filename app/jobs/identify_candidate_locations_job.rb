@@ -28,45 +28,62 @@ module IdentifyCandidateLocationsJob
 
   def self.perform(model)
     batch_id = Time.now
-    bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})
-    puts "Nearby BJJMapper locations #{bjjmapper_nearby_locations.inspect}"
-    bjjmapper_nearby_locations = bjjmapper_nearby_locations['locations']
+    bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})['locations']
 
     puts "Searching Yelp for listings"
-    find_academy_listings(model).each do |listing|
-      listing = build_listing(listing, batch_id)
-      puts "Found business #{listing.name}, #{listing.inspect}"
+    find_academy_listings(model).each do |block|
+      block.each do |listing|
+        listing = build_listing(listing, batch_id)
+        puts "Found business #{listing.name}, #{listing.inspect}"
 
-      closest_location = bjjmapper_nearby_locations.sort_by {|loc| Math.circle_distance(loc['lat'], loc['lng'], listing.lat, listing.lng)}.first
-      distance = Math.circle_distance(closest_location['lat'], closest_location['lng'], listing.lat, listing.lng)
-      puts "Closest location (#{closest_location['title']}) is #{distance} away"
-      
-      if (distance < DISTANCE_THRESHOLD_MI)
-        puts "Found nearby location #{closest_location['title']}, associating #{listing.yelp_id}"
-        Resque.enqueue(YelpFetchAndAssociateJob, {
-          bjjmapper_location_id: closest_location['id'],
-          yelp_id: listing.yelp_id
-        })
-      else
-        puts "Creating candidate location #{listing.name}"
-        response = @bjjmapper.create_pending_location({
-          title: listing.name,
-          coordinates: [listing.lng, listing.lat],
-          street: listing.address,
-          postal_code: listing.postal_code,
-          city: listing.city,
-          state: listing.state_code,
-          country: listing.country_code,
-          source: 'Yelp',
-          phone: listing.phone || listing.display_phone,
-          flag_closed: listing.is_closed
-        })
-
-        listing.bjjmapper_id = response['id']
+        listing.bjjmapper_location_id = bjjmapper_location_for_listing(listing, bjjmapper_nearby_locations) 
+        listing.upsert(@connection, yelp_id: listing.yelp_id)
       end
-
-      listing.save(@connection)
     end
+  end
+
+  def self.bjjmapper_location_for_listing(listing, nearby_locations)
+    nearest = nearest_neighbour(listing, nearby_locations)
+    if (nearest[:distance] < DISTANCE_THRESHOLD_MI)
+      enqueue_associate_listing_job(listing, nearest[:location])
+    else
+      create_pending_location_from_listing(listing)
+    end
+  end
+
+  def self.nearest_neighbour(listing, neighbours)
+    closest_location = neighbours.sort_by {|loc| Math.circle_distance(loc['lat'], loc['lng'], listing.lat, listing.lng)}.first
+    distance = Math.circle_distance(closest_location['lat'], closest_location['lng'], listing.lat, listing.lng)
+    puts "Closest location (#{closest_location['title']}) is #{distance} away"
+    { location: closest_location, distance: distance }
+  end
+
+  def self.enqueue_associate_listing_job(listing, location)
+    puts "Associating #{listing.yelp_id} with #{location['title']}"
+    Resque.enqueue(YelpFetchAndAssociateJob, {
+      bjjmapper_location_id: location['id'],
+      yelp_id: listing.yelp_id
+    })
+
+    return location['id']
+  end
+
+  def self.create_pending_location_from_listing!(listing)
+    puts "Creating candidate location #{listing.name}"
+    response = @bjjmapper.create_pending_location({
+      title: listing.name,
+      coordinates: [listing.lng, listing.lat],
+      street: listing.address,
+      postal_code: listing.postal_code,
+      city: listing.city,
+      state: listing.state_code,
+      country: listing.country_code,
+      source: 'Yelp',
+      phone: listing.phone || listing.display_phone,
+      flag_closed: listing.is_closed
+    })
+
+    response['id']
   end
 
   def self.find_academy_listings(model)
@@ -74,22 +91,20 @@ module IdentifyCandidateLocationsJob
     lng = model['lng']
     title = model['title'] || DEFAULT_TITLE
 
-    businesses = []
+    businesses_count = 0
     loop do
       response = @client.search_by_coordinates({ latitude: lat, longitude: lng }, 
-                                               { offset: businesses.size, limit: PAGE_LIMIT, 
+                                               { offset: businesses_count, limit: PAGE_LIMIT, 
                                                  term: title, category_filter: CATEGORY_FILTER_MARTIAL_ARTS })
       
       puts "Search returned #{response.businesses.count} listings"
-      businesses.concat(response.businesses) if response.businesses
+      yield response.businesses if response.businesses
+      businesses_count = businesses_count + response.businesses.count
 
-      break if response.businesses.count < PAGE_LIMIT || businesses.count >= TOTAL_LIMIT
+      break if response.businesses.count < PAGE_LIMIT || businesses_count >= TOTAL_LIMIT
     
       sleep(2)
     end
-    puts "Found a total of #{businesses.count} listings"
-
-    businesses
   end
 
   def self.build_listing(listing_response, batch_id)

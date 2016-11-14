@@ -20,27 +20,32 @@ module YelpSearchJob
     batch_id = Time.now
 
     listings = find_best_listings(model)
+    if listings.nil? || listings.count == 0
+      puts "Couldn't find anything"
+      return
+    end
+
     listings.first.tap do |listing|
-      puts "Fetching detailed information for #{listing.id}"
+      puts "First listing is #{listing.inspect}"
       detailed_response = @client.business(listing.id)
       detailed_listing = build_listing(detailed_response.business, bjjmapper_location_id, batch_id)
 
       detailed_response.business.reviews.each do |review_response|
         review = build_review(review_response, bjjmapper_location_id, listing.id)
         puts "Storing review #{review.inspect}"
-        review.save(@connection)
-      end
+        review.upsert(@connection, yelp_id: detailed_listing.yelp_id, time_created: review.time_created, user_id: review.user_id)
+      end unless detailed_response.business.reviews.nil?
 
       puts "Storing primary listing #{listing.id}"
       detailed_listing.primary = true
-      detailed_listing.save(@connection)
+      detailed_listing.upsert(@connection, yelp_id: detailed_listing.yelp_id)
     end
 
     listings.drop(1).each do |listing|
       puts "Storing secondary listing #{listing.id}"
       build_listing(listing, bjjmapper_location_id, batch_id).tap do |o|
         o.primary = false
-        o.save(@connection)
+        o.upsert(@connection, yelp_id: o.yelp_id)
       end
     end
   end
