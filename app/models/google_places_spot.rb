@@ -11,13 +11,14 @@ class GooglePlacesSpot
       :rating, :url, :website, :review_summary, :price_level, 
       :opening_hours, :utc_offset, :place_id].freeze
 
-  attr_accessor  :lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id,
+  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id,
                  :address_components, :street_number, :street, :city, :region, :postal_code,
                  :country, :rating, :url, :cid, :website, :aspects, :zagat_selected,
                  :zagat_reviewed, :review_summary, :nextpagetoken, :price_level,
-                 :opening_hours, :events, :utc_offset, :place_id
-
-  attr_accessor  :_id, :bjjmapper_location_id, :batch_id, :primary
+                 :opening_hours, :events, :utc_offset, :place_id,
+                 :_id, :bjjmapper_location_id, :batch_id, :primary]
+  
+  attr_accessor *COLLECTION_FIELDS
 
   def as_json
     SLICE_ATTRIBUTES.inject({}) do |hash, k|

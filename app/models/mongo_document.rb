@@ -31,15 +31,17 @@ module MongoDocument
     end
   end
 
-  def initialize(attributes)
+  def initialize(attributes = {})
     self.merge_attributes!(attributes)
   end
 
   def merge_attributes!(attributes)
-    attributes = attributes.instance_variables.inject({}) do |hash, k|
-      key = k[1..-1]
-      hash[key] = attributes.instance_variable_get(k); hash
-    end unless attributes.is_a?(Hash)
+    if !attributes.is_a?(Hash)
+      attributes = self.class.const_get(:COLLECTION_FIELDS).inject({}) do |hash, k|
+        hash[k] = attributes.send(k) if attributes.respond_to?(k)
+        hash
+      end
+    end
 
     attributes.each_pair do |k, v|
       self.send("#{k}=", v) if self.respond_to?("#{k}=")

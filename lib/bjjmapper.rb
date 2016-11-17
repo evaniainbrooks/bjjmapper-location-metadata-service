@@ -21,19 +21,13 @@ class BJJMapper
 
     begin
       response = http.request(request)
-      response.code.to_i
+      return nil unless response.code.to_i == 200
+      
+      JSON.parse(response.body)
     rescue StandardError => e
-      Rails.logger.error e.message
-      500
+      puts e.message
+      nil
     end
-  end
-
-  def directory_segments
-    query = params.merge(:api_key => API_KEY)
-    query = URI.encode_www_form(query)
-    uri = URI("http://#{@host}:#{@port}/bjj-academy-directory.json?#{query}")
-
-    get_request(uri)
   end
 
   def map_search(params)

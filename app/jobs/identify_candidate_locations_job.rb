@@ -28,10 +28,11 @@ module IdentifyCandidateLocationsJob
 
   def self.perform(model)
     batch_id = Time.now
-    bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})['locations']
+    bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})
+    bjjmapper_nearby_locations = bjjmapper_nearby_locations ? bjjmapper_nearby_locations['locations'] : []
 
     puts "Searching Yelp for listings"
-    find_academy_listings(model).each do |block|
+    find_academy_listings(model) do |block|
       block.each do |listing|
         listing = build_listing(listing, batch_id)
         puts "Found business #{listing.name}, #{listing.inspect}"
@@ -44,15 +45,17 @@ module IdentifyCandidateLocationsJob
 
   def self.bjjmapper_location_for_listing(listing, nearby_locations)
     nearest = nearest_neighbour(listing, nearby_locations)
-    if (nearest[:distance] < DISTANCE_THRESHOLD_MI)
+    if (!nearest.nil? && nearest[:distance] < DISTANCE_THRESHOLD_MI)
       enqueue_associate_listing_job(listing, nearest[:location])
     else
-      create_pending_location_from_listing(listing)
+      create_pending_location_from_listing!(listing)
     end
   end
 
   def self.nearest_neighbour(listing, neighbours)
     closest_location = neighbours.sort_by {|loc| Math.circle_distance(loc['lat'], loc['lng'], listing.lat, listing.lng)}.first
+    return nil if closest_location.nil?
+    
     distance = Math.circle_distance(closest_location['lat'], closest_location['lng'], listing.lat, listing.lng)
     puts "Closest location (#{closest_location['title']}) is #{distance} away"
     { location: closest_location, distance: distance }
@@ -83,6 +86,7 @@ module IdentifyCandidateLocationsJob
       flag_closed: listing.is_closed
     })
 
+    puts "Created #{response['id']} location"
     response['id']
   end
 
@@ -97,8 +101,10 @@ module IdentifyCandidateLocationsJob
                                                { offset: businesses_count, limit: PAGE_LIMIT, 
                                                  term: title, category_filter: CATEGORY_FILTER_MARTIAL_ARTS })
       
-      puts "Search returned #{response.businesses.count} listings"
-      yield response.businesses if response.businesses
+      puts "Search returned #{(response.businesses || []).count} listings"
+      break unless response.businesses && response.businesses.count > 0
+
+      yield response.businesses
       businesses_count = businesses_count + response.businesses.count
 
       break if response.businesses.count < PAGE_LIMIT || businesses_count >= TOTAL_LIMIT
@@ -109,6 +115,7 @@ module IdentifyCandidateLocationsJob
 
   def self.build_listing(listing_response, batch_id)
     return YelpBusiness.new(listing_response).tap do |r|
+      r.name = listing_response.name
       r.yelp_id = listing_response.id
       r.merge_attributes!(listing_response.location)
       if listing_response.location && listing_response.location.coordinate

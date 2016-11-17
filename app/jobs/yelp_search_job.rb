@@ -65,8 +65,10 @@ module YelpSearchJob
     return YelpBusiness.new(listing_response).tap do |r|
       r.yelp_id = listing_response.id
       r.merge_attributes!(listing_response.location)
-      r.lat = listing_response.location.coordinate.latitude
-      r.lng = listing_response.location.coordinate.longitude
+      if listing_response.location && listing_response.location.coordinate
+        r.lat = listing_response.location.coordinate.latitude
+        r.lng = listing_response.location.coordinate.longitude
+      end
       r.bjjmapper_location_id = location_id
       r.batch_id = batch_id
     end
