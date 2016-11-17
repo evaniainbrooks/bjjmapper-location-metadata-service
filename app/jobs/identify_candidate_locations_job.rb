@@ -123,6 +123,7 @@ module IdentifyCandidateLocationsJob
         r.lng = listing_response.location.coordinate.longitude
       end
       r.batch_id = batch_id
+      r.primary = true
     end
   end
 end

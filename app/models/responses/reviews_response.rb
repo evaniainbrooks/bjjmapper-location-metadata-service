@@ -31,7 +31,7 @@ module Responses
       rating = spot.rating
       rating = rating || begin
         reviews.inject(0.0) do |sum, r|
-          sum = sum + r[:rating].to_f
+          sum = sum + r.rating.to_f
         end / reviews.count
       end if reviews.count > 0
     
