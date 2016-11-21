@@ -1,15 +1,14 @@
 require File.expand_path '../../spec_helper.rb', __FILE__
 
 describe MongoDocument do
-  let(:test_class) do
-    Class.new do
-      COLLECTION_NAME ='test_collection'
-      COLLECTION_FIELDS = [:_id, :test_field]
-      include MongoDocument
+  class TestClass
+    COLLECTION_NAME ='test_collection'
+    COLLECTION_FIELDS = [:_id, :test_field]
+    include MongoDocument
 
-      attr_accessor *COLLECTION_FIELDS
-    end
+    attr_accessor *COLLECTION_FIELDS
   end
+  let(:test_class) { TestClass }
   let(:mongo) { double }
   let(:connection) do
     connection = {}

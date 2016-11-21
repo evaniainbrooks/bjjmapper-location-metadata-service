@@ -23,7 +23,11 @@ describe IdentifyCandidateLocationsJob do
     let(:lat) { 80.0 }
     let(:lng) { 80.0 }
     let(:model) { {'title' => 'meow', 'lat' => lat, 'lng' => lng } }
-    let(:empty_yelp_response) { double('yelp response', businesses: []) }
+    let(:empty_yelp_response) { double('empty yelp response', businesses: []) }
+    let(:yelp_coordinates) { double(coordinate: double(latitude: lat, longitude: lng)) }
+    let(:yelp_business) { double(id: 'yelp1234', location: yelp_coordinates, name: 'yelp business') }
+    let(:yelp_response) { double('yelp response', businesses: [yelp_business]) }
+    
     it 'searches bjj mapper for nearby locations' do
       stub_bjjmapper_search
       stub_yelp_search
@@ -33,9 +37,6 @@ describe IdentifyCandidateLocationsJob do
 
     context 'with listings' do
       context 'when there are nearby bjjmapper locations' do
-        let(:location) { double(coordinate: double(latitude: lat, longitude: lng)) }
-        let(:yelp_business) { double(id: 'yelp1234', location: location, name: 'yelp business') }
-        let(:yelp_response) { double(businesses: [yelp_business]) }
         let(:closest_location) { { 'id' => 'locid', 'lat' => lat, 'lng' => lng } }
         before do 
           stub_bjjmapper_search({ 'locations' => [closest_location] })
@@ -48,10 +49,7 @@ describe IdentifyCandidateLocationsJob do
         end
       end
       context 'when there are bjjmapper locations further than the threshold' do
-        let(:yelp_coord) { double(coordinate: double(latitude: lat, longitude: lng)) }
-        let(:yelp_business) { double('business', id: 'yelp1234', location: yelp_coord, name: 'yelp business') }
-        let(:yelp_response) { double('response', businesses: [yelp_business]) }
-        let(:location_response) { { 'id' => 'new_locid', 'lat' => 47.0, 'lng' => -122.0 } }
+        let(:location_response) { { 'title' => 'somelocation', 'id' => 'new_locid', 'lat' => 47.0, 'lng' => -122.0 } }
         before do
           stub_bjjmapper_search({'locations' => [location_response]})
           stub_yelp_search(yelp_response)
@@ -65,10 +63,7 @@ describe IdentifyCandidateLocationsJob do
         end
       end
       context 'when there are no nearby bjjmapper locations' do
-        let(:yelp_coord) { double(coordinate: double(latitude: lat, longitude: lng)) }
-        let(:yelp_business) { double('business', id: 'yelp1234', location: yelp_coord, name: 'yelp business') }
-        let(:yelp_response) { double('response', businesses: [yelp_business]) }
-        let(:location_response) { { 'id' => 'new_locid', 'lat' => lat, 'lng' => lng } }
+        let(:location_response) { { 'title' => 'somelocation', 'id' => 'new_locid', 'lat' => lat, 'lng' => lng } }
         before do
           stub_bjjmapper_search
           stub_yelp_search(yelp_response)

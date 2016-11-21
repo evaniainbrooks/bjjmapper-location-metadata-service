@@ -37,13 +37,13 @@ module IdentifyCandidateLocationsJob
         listing = build_listing(listing, batch_id)
         puts "Found business #{listing.name}, #{listing.inspect}"
 
-        listing.bjjmapper_location_id = bjjmapper_location_for_listing(listing, bjjmapper_nearby_locations) 
+        listing.bjjmapper_location_id = create_or_associate_nearest_location(listing, bjjmapper_nearby_locations) 
         listing.upsert(@connection, yelp_id: listing.yelp_id)
       end
     end
   end
 
-  def self.bjjmapper_location_for_listing(listing, nearby_locations)
+  def self.create_or_associate_nearest_location(listing, nearby_locations)
     nearest = nearest_neighbour(listing, nearby_locations)
     if (!nearest.nil? && nearest[:distance] < DISTANCE_THRESHOLD_MI)
       enqueue_associate_listing_job(listing, nearest[:location])
@@ -53,12 +53,19 @@ module IdentifyCandidateLocationsJob
   end
 
   def self.nearest_neighbour(listing, neighbours)
-    closest_location = neighbours.sort_by {|loc| Math.circle_distance(loc['lat'], loc['lng'], listing.lat, listing.lng)}.first
-    return nil if closest_location.nil?
+    distance_to_neighbours = neighbours.inject({}) do |hash, o|
+      distance = Math.circle_distance(o['lat'], o['lng'], listing.lat, listing.lng)
+      hash[distance] = o
+      hash
+    end
+
+    nearest_distance = distance_to_neighbours.keys.sort.first
+    return nil if nearest_distance.nil?
+
+    nearest_location = distance_to_neighbours[nearest_distance]
     
-    distance = Math.circle_distance(closest_location['lat'], closest_location['lng'], listing.lat, listing.lng)
-    puts "Closest location (#{closest_location['title']}) is #{distance} away"
-    { location: closest_location, distance: distance }
+    puts "Nearest location (#{nearest_location['title']}) is #{nearest_distance} away"
+    { location: nearest_location, distance: nearest_distance }
   end
 
   def self.enqueue_associate_listing_job(listing, location)
