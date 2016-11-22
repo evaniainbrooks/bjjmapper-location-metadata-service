@@ -30,6 +30,7 @@ module IdentifyCandidateLocationsJob
     batch_id = Time.now
     bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})
     bjjmapper_nearby_locations = bjjmapper_nearby_locations ? bjjmapper_nearby_locations['locations'] : []
+    puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
     puts "Searching Yelp for listings"
     find_academy_listings(model) do |block|
@@ -48,7 +49,10 @@ module IdentifyCandidateLocationsJob
     if (!nearest.nil? && nearest[:distance] < DISTANCE_THRESHOLD_MI)
       enqueue_associate_listing_job(listing, nearest[:location])
     else
-      create_pending_location_from_listing!(listing)
+      new_location = create_pending_location_from_listing!(listing)
+      puts "Adding location to the list #{new_location.inspect}"
+      nearby_locations << new_location
+      new_location['id']
     end
   end
 
@@ -94,7 +98,7 @@ module IdentifyCandidateLocationsJob
     })
 
     puts "Created #{response['id']} location"
-    response['id']
+    response
   end
 
   def self.find_academy_listings(model)
