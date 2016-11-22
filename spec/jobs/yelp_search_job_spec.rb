@@ -17,7 +17,7 @@ describe YelpSearchJob do
     end
 
     context 'when there are results' do
-      let(:expected_id) { 123 }
+      let(:expected_id) { '123' }
       let(:yelp_response) { double('yelp response', businesses: [double('business', id: expected_id)]) }
       before do
         YelpSearchJob

@@ -27,7 +27,7 @@ module YelpSearchJob
 
     listings.first.tap do |listing|
       puts "First listing is #{listing.inspect}"
-      detailed_response = @client.business(listing.id)
+      detailed_response = @client.business(URI::encode(listing.id))
       detailed_listing = build_listing(detailed_response.business, bjjmapper_location_id, batch_id)
 
       detailed_response.business.reviews.each do |review_response|
