@@ -9,7 +9,7 @@ describe GoogleIdentifyCandidateLocationsJob do
       GoogleIdentifyCandidateLocationsJob.instance_variable_set("@places_client", google_places)
     end
 
-    def stub_bjjmapper_search(response = nil)
+    def stub_bjjmapper_search(response = [])
       bjjmapper.should_receive(:map_search)
         .with(hash_including({sort: 'distance', distance: GoogleIdentifyCandidateLocationsJob::DISTANCE_THRESHOLD_MI, lat: listing_lat, lng: listing_lng})) 
         .and_return(response)
@@ -36,7 +36,7 @@ describe GoogleIdentifyCandidateLocationsJob do
     
     it 'searches bjj mapper for nearby locations' do
       stub_google_search(google_response)
-      stub_bjjmapper_search({'locations' => []})
+      stub_bjjmapper_search
       bjjmapper.stub(:create_pending_location).and_return(model)
 
       GoogleIdentifyCandidateLocationsJob.perform(model)
@@ -46,7 +46,7 @@ describe GoogleIdentifyCandidateLocationsJob do
       context 'when there are nearby bjjmapper locations' do
         let(:closest_location) { { 'id' => 'locid', 'lat' => lat, 'lng' => lng } }
         before do 
-          stub_bjjmapper_search({ 'locations' => [closest_location] })
+          stub_bjjmapper_search([closest_location])
           stub_google_search(google_response)
         end
         it 'enqueues a fetch and associate job for the closest location' do
