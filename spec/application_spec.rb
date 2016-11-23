@@ -43,13 +43,24 @@ describe 'LocationFetchService' do
     end
     context 'without location.id parameter' do
       let(:request) { { location: { lat: 80.0, lng: 80.0 }  }.to_json }
-      before do
-        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
-        Resque.should_receive(:enqueue).with(YelpIdentifyCandidateLocationsJob, anything)
+      context 'without scope paramter' do
+        before do
+          Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
+          Resque.should_receive(:enqueue).with(YelpIdentifyCandidateLocationsJob, anything)
+        end
+        it 'enqueues an IdentifyCandidateLocationsJob and returns 202' do
+          post "/search/async?api_key=#{api_key}", request, content_type
+          last_response.status.should eq 202
+        end
       end
-      it 'enqueues an IdentifyCandidateLocationsJob and returns 202' do
-        post "/search/async?api_key=#{api_key}", request, content_type
-        last_response.status.should eq 202
+      context 'with scope parameter' do
+        before do
+          Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
+        end
+        it 'enqueues search job for the scope and returns 202' do
+          post "/search/async?api_key=#{api_key}&scope=google", request, content_type
+          last_response.status.should eq 202
+        end
       end
     end
   end
