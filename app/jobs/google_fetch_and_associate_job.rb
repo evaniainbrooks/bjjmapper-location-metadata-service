@@ -18,7 +18,7 @@ module GoogleFetchAndAssociateJob
     bjjmapper_location_id = model['bjjmapper_location_id']
     listing = @places_client.spot(model['place_id'])
     detailed_listing = build_listing(listing, bjjmapper_location_id)
-    detailed_listing.reviews.each do |review_response|
+    listing.reviews.each do |review_response|
       review = build_review(review_response, bjjmapper_location_id, listing.id)
       puts "Storing review #{review.inspect}"
       review.upsert(@connection, place_id: detailed_listing.place_id, author_name: review.author_name, time: review.time)
