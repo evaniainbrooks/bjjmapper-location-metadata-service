@@ -44,7 +44,8 @@ describe 'LocationFetchService' do
     context 'without location.id parameter' do
       let(:request) { { location: { lat: 80.0, lng: 80.0 }  }.to_json }
       before do
-        Resque.should_receive(:enqueue).with(IdentifyCandidateLocationsJob, anything)
+        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
+        Resque.should_receive(:enqueue).with(YelpIdentifyCandidateLocationsJob, anything)
       end
       it 'enqueues an IdentifyCandidateLocationsJob and returns 202' do
         post "/search/async?api_key=#{api_key}", request, content_type

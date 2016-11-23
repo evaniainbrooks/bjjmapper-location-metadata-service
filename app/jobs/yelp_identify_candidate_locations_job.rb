@@ -6,7 +6,7 @@ require_relative '../models/yelp_business'
 require_relative '../../lib/bjjmapper'
 require_relative '../../lib/circle_distance'
 
-module IdentifyCandidateLocationsJob
+module YelpIdentifyCandidateLocationsJob
   @client = Yelp::Client.new({
     consumer_key: LocationFetchService::YELP_API_KEY[:consumer_key],
     consumer_secret: LocationFetchService::YELP_API_KEY[:consumer_secret],
@@ -28,15 +28,15 @@ module IdentifyCandidateLocationsJob
 
   def self.perform(model)
     batch_id = Time.now
-    bjjmapper_nearby_locations = @bjjmapper.map_search({distance: DEFAULT_DISTANCE_MI, lat: model['lat'], lng: model['lng']})
-    bjjmapper_nearby_locations = bjjmapper_nearby_locations ? bjjmapper_nearby_locations['locations'] : []
-    puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
-
     puts "Searching Yelp for listings"
     find_academy_listings(model) do |block|
       block.each do |listing|
         listing = build_listing(listing, batch_id)
         puts "Found business #{listing.name}, #{listing.inspect}"
+        
+        bjjmapper_nearby_locations = @bjjmapper.map_search({sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng})
+        bjjmapper_nearby_locations = bjjmapper_nearby_locations ? bjjmapper_nearby_locations['locations'] : []
+        puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
         listing.bjjmapper_location_id = create_or_associate_nearest_location(listing, bjjmapper_nearby_locations) 
         listing.upsert(@connection, yelp_id: listing.yelp_id)
@@ -45,31 +45,15 @@ module IdentifyCandidateLocationsJob
   end
 
   def self.create_or_associate_nearest_location(listing, nearby_locations)
-    nearest = nearest_neighbour(listing, nearby_locations)
-    if (!nearest.nil? && nearest[:distance] < DISTANCE_THRESHOLD_MI)
-      enqueue_associate_listing_job(listing, nearest[:location])
+    nearest = nearby_locations.first
+    if !nearest.nil?
+      enqueue_associate_listing_job(listing, nearest)
+      nearest['id']
     else
-      new_location = create_pending_location_from_listing!(listing)
-      puts "Adding location to the list #{new_location.inspect}"
-      nearby_locations << new_location
-      new_location['id']
+      new_loc = create_pending_location_from_listing!(listing)
+      enqueue_associate_listing_job(listing, new_loc)
+      new_loc['id']
     end
-  end
-
-  def self.nearest_neighbour(listing, neighbours)
-    distance_to_neighbours = neighbours.inject({}) do |hash, o|
-      distance = Math.circle_distance(o['lat'], o['lng'], listing.lat, listing.lng)
-      hash[distance] = o
-      hash
-    end
-
-    nearest_distance = distance_to_neighbours.keys.sort.first
-    return nil if nearest_distance.nil?
-
-    nearest_location = distance_to_neighbours[nearest_distance]
-    
-    puts "Nearest location (#{nearest_location['title']}) is #{nearest_distance} away"
-    { location: nearest_location, distance: nearest_distance }
   end
 
   def self.enqueue_associate_listing_job(listing, location)
@@ -78,8 +62,6 @@ module IdentifyCandidateLocationsJob
       bjjmapper_location_id: location['id'],
       yelp_id: listing.yelp_id
     })
-
-    return location['id']
   end
 
   def self.create_pending_location_from_listing!(listing)
@@ -108,7 +90,7 @@ module IdentifyCandidateLocationsJob
 
     businesses_count = 0
     loop do
-      response = @client.search_by_coordinates({ latitude: lat, longitude: lng }, 
+      response = @client.search_by_coordinates({ distance: DEFAULT_DISTANCE_MI, latitude: lat, longitude: lng }, 
                                                { offset: businesses_count, limit: PAGE_LIMIT, 
                                                  term: title, category_filter: CATEGORY_FILTER_MARTIAL_ARTS })
       

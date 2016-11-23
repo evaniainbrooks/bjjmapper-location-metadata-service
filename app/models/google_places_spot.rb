@@ -11,7 +11,8 @@ class GooglePlacesSpot
       :rating, :url, :website, :review_summary, :price_level, 
       :opening_hours, :utc_offset, :place_id].freeze
 
-  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id,
+  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id, 
+                 :formatted_phone_number, :international_phone_number, 
                  :address_components, :street_number, :street, :city, :region, :postal_code,
                  :country, :rating, :url, :cid, :website, :aspects, :zagat_selected,
                  :zagat_reviewed, :review_summary, :nextpagetoken, :price_level,

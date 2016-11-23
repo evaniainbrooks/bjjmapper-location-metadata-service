@@ -7,7 +7,8 @@ require 'resque'
 require_relative './config'
 require_relative 'app/jobs/google_places_search_job'
 require_relative 'app/jobs/yelp_search_job'
-require_relative 'app/jobs/identify_candidate_locations_job'
+require_relative 'app/jobs/google_identify_candidate_locations_job'
+require_relative 'app/jobs/yelp_identify_candidate_locations_job'
 require_relative 'app/jobs/yelp_fetch_and_associate_job'
 require_relative 'app/jobs/google_fetch_and_associate_job'
 
@@ -171,7 +172,8 @@ module LocationFetchService
       scope = params[:scope]
 
       if @location['id'].nil?
-        Resque.enqueue(IdentifyCandidateLocationsJob, @location)
+        Resque.enqueue(GoogleIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'google')
+        Resque.enqueue(YelpIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'yelp')
       else
         Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
         Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
