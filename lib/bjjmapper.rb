@@ -12,7 +12,7 @@ class BJJMapper
 
   def create_pending_location(location_data)
     query = {api_key: API_KEY}
-    uri = URI("http://#{@host}:#{@port}/locations.json?api_key=#{API_KEY}")
+    uri = URI("http://#{@host}:#{@port}/api/locations.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
     request = Net::HTTP::Post.new(uri.request_uri)
@@ -31,9 +31,9 @@ class BJJMapper
   end
 
   def map_search(params)
-    query = params.merge(:api_key => API_KEY, :count => 100, :rejected => 1, :closed => 1, :unverified => 1, :'location_type[]' => 1)
+    query = params.merge(:api_key => API_KEY, :count => 100, :rejected => 1, :closed => 1, :unverified => 1)
     query = URI.encode_www_form(query)
-    uri = URI("http://#{@host}:#{@port}/map/search.json?#{query}")
+    uri = URI("http://#{@host}:#{@port}/api/locations.json?#{query}")
 
     get_request(uri)
   end
