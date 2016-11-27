@@ -8,7 +8,7 @@ class YelpBusiness
     :snippet_text, :image_url, :snippet_image_url, :display_phone, 
     :rating_img_url_large, :yelp_id, :is_closed,
 
-    :address, :display_address, :city, 
+    :address, :display_address, :city, :website,
     :state_code, :postal_code, :country_code, 
     :cross_streets, :neighborhoods, :lat, :lng,
 
