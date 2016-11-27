@@ -23,6 +23,7 @@ module YelpIdentifyCandidateLocationsJob
   TOTAL_LIMIT = 200
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
+  FILTER_WORDS = ['capoeira', 'karate', 'taekwondo', 'cultural', 'aikido'].freeze
   DEFAULT_DISTANCE_MI = 25
   DISTANCE_THRESHOLD_MI = 0.4
 
@@ -33,7 +34,12 @@ module YelpIdentifyCandidateLocationsJob
       block.each do |listing|
         listing = build_listing(listing, batch_id)
         puts "Found business #{listing.name}, #{listing.inspect}"
-        
+       
+        if should_filter?(listing.name)
+          puts "Filtering #{listing.name} because of title"
+          next
+        end
+
         bjjmapper_nearby_locations = @bjjmapper.map_search({sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng})
         puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
@@ -41,6 +47,12 @@ module YelpIdentifyCandidateLocationsJob
         listing.upsert(@connection, yelp_id: listing.yelp_id)
       end
     end
+  end
+
+  def self.should_filter?(name)
+    name_components = name.split.collect(&:downcase).to_set
+    filtered_word = FILTER_WORDS.detect {|word| name_components.include?(word) }
+    return !filtered_word.nil?
   end
 
   def self.create_or_associate_nearest_location(listing, nearby_locations)
