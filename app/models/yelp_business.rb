@@ -19,7 +19,7 @@ class YelpBusiness
   def as_json
     {
       source: 'Yelp', lat: lat, lng: lng, title: name, icon: snippet_image_url,
-      is_closed: is_closed, is_claimed: is_claimed, phone: phone,
+      is_closed: is_closed, is_claimed: is_claimed, phone: phone, website: website,
       formatted_phone: display_phone, city: city, country: country_code, 
       postal_code: postal_code, state: state_code, street: address.join(" "), yelp_id: yelp_id
     }
