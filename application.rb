@@ -160,8 +160,10 @@ module LocationFetchService
         body = JSON.parse(request.body.read)
         @location = body['location']
       ensure
-        puts "Missing location param, halting"
-        halt 400 and return false unless @location
+        unless @location
+          puts "Missing location param, halting"
+          halt 400 and return false
+        end
       end
     end
 

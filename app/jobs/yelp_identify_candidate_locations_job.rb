@@ -80,7 +80,7 @@ module YelpIdentifyCandidateLocationsJob
     response = @bjjmapper.create_pending_location({
       title: listing.name,
       coordinates: [listing.lng, listing.lat],
-      street: listing.address,
+      street: (listing.address || []).join(', '),
       postal_code: listing.postal_code,
       city: listing.city,
       state: listing.state_code,

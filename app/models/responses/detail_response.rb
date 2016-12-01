@@ -6,13 +6,9 @@ module Responses
       end.compact
 
       if combined
-        if attributes.size > 1
-          attributes[0].merge(attributes[1]).tap do |o|
-            o[:source] = 'Multiple'
-          end
-        elsei
-          attributes.first
-        end.to_json
+        (attributes || []).inject({}) do |hash, attrs|
+          hash.merge(attrs.delete_if{|k,v| v.nil?})
+        end.merge(source: 'Multiple').to_json
       else
         attributes.to_json
       end
