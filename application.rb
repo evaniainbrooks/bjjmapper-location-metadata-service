@@ -108,7 +108,8 @@ module LocationFetchService
         puts "Checking google association"
         if @spot && params[:google_id] != @spot.place_id
           puts "Updating existing listing #{@spot.place_id}"
-          @spot.update(settings.app_db, {:primary => false})
+          @spot.primary = false
+          @spot.save(settings.app_db)
         end
         
         location_id = params[:bjjmapper_location_id]
@@ -116,7 +117,9 @@ module LocationFetchService
         new_spot = GooglePlacesSpot.find(settings.app_db, conditions)
         if !new_spot.nil?
           puts "New associated listing exists #{new_spot.place_id}"
-          new_spot.update(settings.app_db, {:bjjmapper_location_id => location_id, :primary => true})
+          new_spot.bjjmapper_location_id = location_id
+          new_spot.primary = true
+          new_spot.save(settings.app_db)
         else
           puts "New associated listing does not exist, fetching"
           Resque.enqueue(GoogleFetchAndAssociateJob, {
@@ -130,7 +133,8 @@ module LocationFetchService
         puts "Checking Yelp association"
         if @yelp_business && params[:yelp_id] != @yelp_business.yelp_id
           puts "Updating existing listing #{@yelp_business.yelp_id}"
-          @yelp_business.update(settings.app_db, {:primary => false})
+          @yelp_business.primary = false
+          @yelp_business.save(settings.app_db)
         end
         
         location_id = params[:bjjmapper_location_id]
@@ -138,7 +142,9 @@ module LocationFetchService
         new_spot = YelpBusiness.find(settings.app_db, conditions)
         if !new_spot.nil?
           puts "New associated listing exists #{new_spot.yelp_id}"
-          new_spot.update(settings.app_db, {:bjjmapper_location_id => location_id, :primary => true})
+          new_spot.bjjmapper_location_id = location_id
+          new_spot.primary = true
+          new_spot.save(settings.app_db)
         else
           puts "New associated listing does not exist, fetching"
           Resque.enqueue(YelpFetchAndAssociateJob, {
