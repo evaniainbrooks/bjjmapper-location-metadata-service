@@ -1,19 +1,13 @@
 require 'resque'
 require 'mongo'
-require 'yelp'
 require_relative '../../config'
 require_relative '../models/yelp_business'
 require_relative '../../lib/bjjmapper'
 require_relative '../../lib/circle_distance'
+require_relative '../../lib/yelp_fusion_client'
 
 module YelpIdentifyCandidateLocationsJob
-  @client = Yelp::Client.new({
-    consumer_key: LocationFetchService::YELP_API_KEY[:consumer_key],
-    consumer_secret: LocationFetchService::YELP_API_KEY[:consumer_secret],
-    token: LocationFetchService::YELP_API_KEY[:token],
-    token_secret: LocationFetchService::YELP_API_KEY[:token_secret]
-  })
-
+  @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
   @bjjmapper = BJJMapper.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
@@ -24,7 +18,7 @@ module YelpIdentifyCandidateLocationsJob
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
   FILTER_WORDS = ['capoeira', 'karate', 'taekwondo', 'cultural', 'aikido'].freeze
-  DEFAULT_DISTANCE_MI = 25
+  DEFAULT_DISTANCE_METERS = 40000
   DISTANCE_THRESHOLD_MI = 0.4
 
   def self.perform(model)
@@ -101,17 +95,18 @@ module YelpIdentifyCandidateLocationsJob
 
     businesses_count = 0
     loop do
-      response = @client.search_by_coordinates({ distance: DEFAULT_DISTANCE_MI, latitude: lat, longitude: lng }, 
-                                               { offset: businesses_count, limit: PAGE_LIMIT, 
-                                                 term: title, category_filter: CATEGORY_FILTER_MARTIAL_ARTS })
+      response = @client.search({ radius: DEFAULT_DISTANCE_METERS,
+                                  latitude: lat, longitude: lng,
+                                  offset: businesses_count, limit: PAGE_LIMIT,
+                                  term: title, categories: CATEGORY_FILTER_MARTIAL_ARTS })
       
-      puts "Search returned #{(response.businesses || []).count} listings"
-      break unless response.businesses && response.businesses.count > 0
+      puts "Search returned #{(response['businesses'] || []).count} listings"
+      break unless response['businesses'] && response['businesses'].count > 0
 
-      yield response.businesses
-      businesses_count = businesses_count + response.businesses.count
+      yield response['businesses']
+      businesses_count = businesses_count + response['businesses'].count
 
-      break if response.businesses.count < PAGE_LIMIT || businesses_count >= TOTAL_LIMIT
+      break if response['businesses'].count < PAGE_LIMIT || businesses_count >= TOTAL_LIMIT
     
       sleep(2)
     end
@@ -119,12 +114,12 @@ module YelpIdentifyCandidateLocationsJob
 
   def self.build_listing(listing_response, batch_id)
     return YelpBusiness.new(listing_response).tap do |r|
-      r.name = listing_response.name
-      r.yelp_id = listing_response.id
-      r.merge_attributes!(listing_response.location)
-      if listing_response.location && listing_response.location.coordinate
-        r.lat = listing_response.location.coordinate.latitude
-        r.lng = listing_response.location.coordinate.longitude
+      r.name = listing_response['name']
+      r.yelp_id = listing_response['id']
+      r.merge_attributes!(listing_response['location'])
+      if listing_response['coordinates']
+        r.lat = listing_response['coordinates']['latitude']
+        r.lng = listing_response['coordinates']['longitude']
       end
       r.batch_id = batch_id
       r.primary = true

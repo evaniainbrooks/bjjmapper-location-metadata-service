@@ -9,8 +9,8 @@ gem 'mongo-resque', require: 'resque'
 gem 'bson_ext'
 gem 'json'
 gem 'koala', '~> 2.2'
-gem 'yelp'
 gem 'thin'
+gem 'http'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'

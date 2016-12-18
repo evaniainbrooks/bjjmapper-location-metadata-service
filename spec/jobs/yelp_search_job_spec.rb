@@ -1,15 +1,20 @@
 require File.expand_path '../../spec_helper.rb', __FILE__
 
 describe YelpSearchJob do
+  let(:bjjmapper) { double }
+  let(:yelp) { double }
+  before do
+    YelpSearchJob.instance_variable_set("@bjjmapper", bjjmapper)
+    YelpSearchJob.instance_variable_set("@client", yelp)
+  end
+
   describe '#perform' do
     let(:model) { {'title' => 'meow', 'lat' => 80.0, 'lng' => 80.0 } }
     context 'when there are no results' do
-      let(:empty_yelp_response) { double('yelp response', businesses: []) }
+      let(:empty_yelp_response) { { 'businesses' => [] } }
       it 'calls .search_by_coordinates on the client' do
-        YelpSearchJob
-          .instance_variable_get("@client")
-          .should_receive(:search_by_coordinates)
-          .with({latitude: model['lat'], longitude: model['lng']}, hash_including(term: model['title']))
+        yelp.should_receive(:search)
+          .with(hash_including({latitude: model['lat'], longitude: model['lng'], term: model['title']}))
           .and_return(empty_yelp_response)
 
         YelpSearchJob.perform(model)
@@ -18,30 +23,38 @@ describe YelpSearchJob do
 
     context 'when there are results' do
       let(:expected_id) { '123' }
-      let(:yelp_response) { double('yelp response', businesses: [double('business', id: expected_id)]) }
+      let(:yelp_coordinates) { { 'latitude' => 81.0, 'longitude' => 81.0 } }
+      let(:yelp_business) { { 'id' => expected_id, 'coordinates' => yelp_coordinates, 'name' => 'yelp business' } }
+      let(:yelp_response) { { 'businesses' => [yelp_business] } }
+      let(:yelp_reviews) { { 'reviews' => [] } }
+
       before do
-        YelpSearchJob
-          .instance_variable_get("@client")
-          .stub(:search_by_coordinates)
-          .and_return(yelp_response)
+          yelp.stub(:search).and_return(yelp_response)
       end
       
       it 'calls .business on the client for the best (first) result' do
-        YelpSearchJob
-          .instance_variable_get("@client")
-          .should_receive(:business)
+        yelp.stub(:reviews)
+        yelp.should_receive(:business)
           .with(expected_id)
-          .and_return(double(business: OpenStruct.new))
+          .and_return(yelp_business)
+
+        YelpSearchJob.perform(model)
+      end
+
+      it 'calls .reviews on the client for the best (first) result' do
+        yelp.stub(:business).and_return(yelp_business)
+        yelp.should_receive(:reviews)
+          .with(expected_id)
+          .and_return(yelp_reviews)
 
         YelpSearchJob.perform(model)
       end
       
       it 'upserts the first listing' do
-        YelpSearchJob
-          .instance_variable_get("@client")
-          .should_receive(:business)
+        yelp.stub(:reviews)
+        yelp.should_receive(:business)
           .with(expected_id)
-          .and_return(double(business: OpenStruct.new(id: expected_id)))
+          .and_return(yelp_business)
 
         YelpBusiness.any_instance.should_receive(:upsert).with(anything, yelp_id: expected_id)
 

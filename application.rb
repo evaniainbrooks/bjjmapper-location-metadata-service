@@ -73,6 +73,8 @@ module LocationFetchService
     # Locations routes
     #
     get '/locations/:bjjmapper_location_id/photos' do
+      halt 404 and return false if @spot.nil?
+
       photo_conditions = {place_id: @spot.place_id}
       photo_models = GooglePlacesPhoto.find_all(settings.app_db, photo_conditions)
 

@@ -2,7 +2,11 @@ module Responses
   class DetailResponse
     def self.respond(spot_models, combined = false)
       attributes = spot_models.values.map do |spot_model|
-        spot_model.as_json unless spot_model.nil?
+        unless spot_model.nil?
+          h = spot_model.as_json
+          h[:opening_hours] = events_for_opening_hours(spot_model.opening_hours) if spot_model.respond_to?(:opening_hours)
+          h
+        end
       end.compact
 
       if combined
@@ -15,27 +19,31 @@ module Responses
     end
 
     def self.events_for_opening_hours(opening_hours)
-      Time.use_zone(timezone) do
-        events = opening_hours['peroids'].map do |peroid|
-          start = peroid['open']
-          ending = peroid['close']
+      return [] if opening_hours.nil?
+      
+      #Time.use_zone(timezone) do
+        opening_hours['periods'].map do |period|
+          start = period['open']
+          ending = period['close']
           now = Time.now.beginning_of_week
           day = day_of_week(start['day'])
           {
-            starting: now + day + hours(start['time']),
-            ending: now + day + hours(ending['time']),
+            starting: now + day.days + hours(start['time']),
+            ending: now + day.days + hours(ending['time']),
             recurrence_day: day
           }
         end
-      end
+      #end
     end
 
     def self.day_of_week(o)
-      return ((o.to_i + 6) % 7).days
+      return ((o.to_i + 6) % 7)
     end
 
     def self.hours(o)
-      return Time.parse("#{o[0,2]}:#{o[2,4]}").hours
+      hours = o[0,2].to_i.hours
+      minutes = o[2,4].to_i.minutes
+      hours + minutes
     end
   end
 end

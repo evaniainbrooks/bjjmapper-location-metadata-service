@@ -1,17 +1,12 @@
 require 'resque'
 require 'mongo'
-require 'yelp'
 require_relative '../../config'
 require_relative '../models/yelp_business'
 require_relative '../models/yelp_review'
+require_relative '../../lib/yelp_fusion_client'
 
 module YelpSearchJob
-  @client = Yelp::Client.new({
-    consumer_key: LocationFetchService::YELP_API_KEY[:consumer_key],
-    consumer_secret: LocationFetchService::YELP_API_KEY[:consumer_secret],
-    token: LocationFetchService::YELP_API_KEY[:token],
-    token_secret: LocationFetchService::YELP_API_KEY[:token_secret]
-  })
+  @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
@@ -27,22 +22,24 @@ module YelpSearchJob
 
     listings.first.tap do |listing|
       puts "First listing is #{listing.inspect}"
-      detailed_response = @client.business(URI::encode(listing.id))
-      detailed_listing = build_listing(detailed_response.business, bjjmapper_location_id, batch_id)
+      detailed_response = @client.business(URI::encode(listing['id']))
+      detailed_listing = build_listing(detailed_response, bjjmapper_location_id, batch_id)
 
-      detailed_response.business.reviews.each do |review_response|
-        review = build_review(review_response, bjjmapper_location_id, listing.id)
+      reviews_response = @client.reviews(URI::encode(listing['id']))
+      puts "reviews response is #{reviews_response.inspect}"
+      reviews_response['reviews'].each do |review_response|
+        review = build_review(review_response, bjjmapper_location_id, listing['id'])
         puts "Storing review #{review.inspect}"
-        review.upsert(@connection, yelp_id: detailed_listing.yelp_id, time_created: review.time_created, user_id: review.user_id)
-      end unless detailed_response.business.reviews.nil?
+        review.upsert(@connection, yelp_id: detailed_listing.yelp_id, time_created: review.time_created, user_name: review.user_name)
+      end if reviews_response && reviews_response['reviews']
 
-      puts "Storing primary listing #{listing.id}"
+      puts "Storing primary listing #{listing['id']}"
       detailed_listing.primary = true
       detailed_listing.upsert(@connection, yelp_id: detailed_listing.yelp_id)
     end
 
     listings.drop(1).each do |listing|
-      puts "Storing secondary listing #{listing.id}"
+      puts "Storing secondary listing #{listing['id']}"
       build_listing(listing, bjjmapper_location_id, batch_id).tap do |o|
         o.primary = false
         o.upsert(@connection, yelp_id: o.yelp_id)
@@ -55,19 +52,20 @@ module YelpSearchJob
     lng = model['lng']
     title = model['title']
 
-    response = @client.search_by_coordinates({ latitude: lat, longitude: lng }, { term: title, category_filter: 'martialarts' })
-    puts "Search returned #{response.businesses.count} listings"
+    response = @client.search({ latitude: lat, longitude: lng, term: title, categories: 'martialarts' })
+    puts "Search returned #{response['businesses'].count} listings"
 
-    response.businesses
+    response['businesses']
   end
 
   def self.build_listing(listing_response, location_id, batch_id)
     return YelpBusiness.new(listing_response).tap do |r|
-      r.yelp_id = listing_response.id
-      r.merge_attributes!(listing_response.location)
-      if listing_response.location && listing_response.location.coordinate
-        r.lat = listing_response.location.coordinate.latitude
-        r.lng = listing_response.location.coordinate.longitude
+      r.name = listing_response['name']
+      r.yelp_id = listing_response['id']
+      r.merge_attributes!(listing_response['location'])
+      if listing_response['coordinates']
+        r.lat = listing_response['coordinates']['latitude']
+        r.lng = listing_response['coordinates']['longitude']
       end
       r.bjjmapper_location_id = location_id
       r.batch_id = batch_id
@@ -77,9 +75,9 @@ module YelpSearchJob
   def self.build_review(review_response, location_id, yelp_id)
     return YelpReview.new(review_response).tap do |r|
       r.bjjmapper_location_id = location_id
-      r.user_id = review_response.user['id']
-      r.user_image_url = review_response.user['image_url']
-      r.user_name = review_response.user['name']
+      r.user_id = review_response['user']['id']
+      r.user_image_url = review_response['user']['image_url']
+      r.user_name = review_response['user']['name']
       r.yelp_id = yelp_id
     end
   end

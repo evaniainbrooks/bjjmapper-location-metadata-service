@@ -11,6 +11,7 @@ class YelpBusiness
     :address, :display_address, :city, :website,
     :state_code, :postal_code, :country_code, 
     :cross_streets, :neighborhoods, :lat, :lng,
+    :address1, :address2, :address3,
 
   :_id, :bjjmapper_location_id, :batch_id, :primary]
 
@@ -21,7 +22,7 @@ class YelpBusiness
       source: 'Yelp', lat: lat, lng: lng, title: name, icon: snippet_image_url,
       is_closed: is_closed, is_claimed: is_claimed, phone: phone, website: website,
       formatted_phone: display_phone, city: city, country: country_code, 
-      postal_code: postal_code, state: state_code, street: address.join(" "), yelp_id: yelp_id
+      postal_code: postal_code, state: state_code, street: [address1, address2, address3].compact.join(' '), yelp_id: yelp_id
     }
   end
 end

@@ -16,17 +16,16 @@ describe YelpIdentifyCandidateLocationsJob do
     end
 
     def stub_yelp_search(response = OpenStruct.new)
-      yelp.should_receive(:search_by_coordinates)
-        .and_return(response)
+      yelp.should_receive(:search).and_return(response)
     end
 
     let(:lat) { 80.0 }
     let(:lng) { 80.0 }
     let(:model) { {'title' => 'meow', 'lat' => lat, 'lng' => lng } }
-    let(:empty_yelp_response) { double('empty yelp response', businesses: []) }
-    let(:yelp_coordinates) { double(coordinate: double(latitude: lat, longitude: lng)) }
-    let(:yelp_business) { double(id: 'yelp1234', location: yelp_coordinates, name: 'yelp business') }
-    let(:yelp_response) { double('yelp response', businesses: [yelp_business]) }
+    let(:empty_yelp_response) { { businesses: [] } }
+    let(:yelp_coordinates) { { 'latitude' => lat, 'longitude' => lng } }
+    let(:yelp_business) { { 'id' => 'yelp1234', 'coordinates' => yelp_coordinates, 'name' => 'yelp business' } }
+    let(:yelp_response) { { 'businesses' => [yelp_business] } }
     
     it 'searches yelp for listings' do
       stub_yelp_search
@@ -50,7 +49,7 @@ describe YelpIdentifyCandidateLocationsJob do
           stub_yelp_search(yelp_response)
         end
         it 'enqueues a fetch and associate job for the closest location' do
-          Resque.should_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(bjjmapper_location_id: closest_location['id'], yelp_id: yelp_business.id))
+          Resque.should_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(bjjmapper_location_id: closest_location['id'], yelp_id: yelp_business['id']))
 
           YelpIdentifyCandidateLocationsJob.perform(model)
         end
@@ -63,14 +62,14 @@ describe YelpIdentifyCandidateLocationsJob do
         end
         it 'creates a pending location' do
           bjjmapper.should_receive(:create_pending_location)
-            .with(hash_including(title: yelp_business.name))
+            .with(hash_including(title: yelp_business['name']))
             .and_return(location_response)
 
           YelpIdentifyCandidateLocationsJob.perform(model)
         end
         it 'persists the listing with the newly created location' do
           bjjmapper.stub(:create_pending_location).and_return(location_response)
-          YelpBusiness.any_instance.should_receive(:upsert).with(anything, yelp_id: yelp_business.id)
+          YelpBusiness.any_instance.should_receive(:upsert).with(anything, yelp_id: yelp_business['id'])
 
           YelpIdentifyCandidateLocationsJob.perform(model)
         end
