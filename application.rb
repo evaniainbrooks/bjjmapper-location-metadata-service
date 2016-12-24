@@ -63,6 +63,8 @@ module LocationFetchService
     end
 
     before '/locations/*' do
+      pass if 'associate' == request.path_info.split('/')[2]
+
       if @spot.nil? && @yelp_business.nil?
         puts "No listings found"
         halt 404 and return false
