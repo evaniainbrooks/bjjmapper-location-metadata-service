@@ -71,17 +71,19 @@ module YelpIdentifyCandidateLocationsJob
 
   def self.create_pending_location_from_listing!(listing)
     puts "Creating candidate location #{listing.name}"
+    
+    o = listing.as_json
     response = @bjjmapper.create_pending_location({
-      title: listing.name,
-      coordinates: [listing.lng, listing.lat],
-      street: (listing.address || []).join(', '),
-      postal_code: listing.postal_code,
-      city: listing.city,
-      state: listing.state_code,
-      country: listing.country_code,
+      title: o[:title],
+      coordinates: [o[:lng], o[:lat]],
+      street: o[:street], 
+      postal_code: o[:postal_code],
+      city: o[:city],
+      state: o[:state],
+      country: o[:country],
       source: 'Yelp',
-      phone: listing.phone || listing.display_phone,
-      flag_closed: listing.is_closed
+      phone: o[:phone],
+      flag_closed: o[:is_closed]
     })
 
     puts "Created #{response['id']} location"
