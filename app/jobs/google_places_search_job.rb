@@ -36,8 +36,6 @@ module GooglePlacesSearchJob
           bjjmapper_location_id: bjjmapper_location_id
         })
       end
-      
-      spot.upsert(@connection, place_id: spot.place_id)
     end
 
     spots.drop(1).each do |spot|
