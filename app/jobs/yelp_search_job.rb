@@ -4,6 +4,7 @@ require_relative '../../config'
 require_relative '../models/yelp_business'
 require_relative '../models/yelp_review'
 require_relative '../../lib/yelp_fusion_client'
+require_relative './google_fetch_and_associate_job'
 
 module YelpSearchJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
@@ -22,20 +23,11 @@ module YelpSearchJob
 
     listings.first.tap do |listing|
       puts "First listing is #{listing.inspect}"
-      detailed_response = @client.business(URI::encode(listing['id']))
-      detailed_listing = build_listing(detailed_response, bjjmapper_location_id, batch_id)
-
-      reviews_response = @client.reviews(URI::encode(listing['id']))
-      puts "reviews response is #{reviews_response.inspect}"
-      reviews_response['reviews'].each do |review_response|
-        review = build_review(review_response, bjjmapper_location_id, listing['id'])
-        puts "Storing review #{review.inspect}"
-        review.upsert(@connection, yelp_id: detailed_listing.yelp_id, time_created: review.time_created, user_name: review.user_name)
-      end if reviews_response && reviews_response['reviews']
-
-      puts "Storing primary listing #{listing['id']}"
-      detailed_listing.primary = true
-      detailed_listing.upsert(@connection, yelp_id: detailed_listing.yelp_id)
+      
+      Resque.enqueue(YelpFetchAndAssociateJob, {
+        bjjmapper_location_id: bjjmapper_location_id,
+        yelp_id: listing['id']
+      })
     end
 
     listings.drop(1).each do |listing|

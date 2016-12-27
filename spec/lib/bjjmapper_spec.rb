@@ -2,6 +2,22 @@ require 'spec_helper'
 
 describe BJJMapper do
   subject { BJJMapper.new('localhost', 9999) }
+  describe '.create_review' do
+    context 'with success response' do
+      let(:review) { { :body => 'meow meow', :author_name => 'Evan', :author_link => 'BJJmapper.com', :rating => 5, :created_at => Time.now }.to_json }
+      let(:response) { double('http_response', code: 200, body: review) }
+      before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Post)).and_return(response) }
+      it 'fetches the response from the service' do
+        subject.create_review(123, review).should eq JSON.parse(review)
+      end
+    end
+    context 'when the service is down' do
+      before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Post)).and_raise(StandardError, 'service is down') }
+      it 'returns nil' do
+        subject.create_review(123, {}).should be_nil 
+      end
+    end
+  end
   describe '.create_pending_location' do
     let(:request) { { title: 'blah' } }
     context 'with success response' do

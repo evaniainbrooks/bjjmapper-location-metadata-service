@@ -10,6 +10,26 @@ class BJJMapper
     @port = port
   end
 
+  def create_review(location_id, review_data)
+    query = {api_key: API_KEY}
+    uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/reviews.json?api_key=#{API_KEY}")
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.body = { :review => review_data }.to_json
+    request.content_type = 'application/json'
+
+    begin
+      response = http.request(request)
+      return nil unless response.code.to_i == 200
+
+      JSON.parse(response.body)
+    rescue StandardError => e
+      puts e.message
+      nil
+    end
+  end
+
   def create_pending_location(location_data)
     query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations.json?api_key=#{API_KEY}")

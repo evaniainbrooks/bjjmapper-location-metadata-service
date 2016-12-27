@@ -6,6 +6,7 @@ require_relative '../models/google_places_spot'
 require_relative '../models/google_places_review'
 require_relative '../models/google_places_photo'
 require_relative '../../lib/circle_distance'
+require_relative './google_fetch_and_associate_job'
 
 module GooglePlacesSearchJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
@@ -28,27 +29,14 @@ module GooglePlacesSearchJob
 
     spots.first.tap do |spot|
       puts "Fetching detailed information for #{spot.place_id}"
-      detailed_response = @places_client.spot(spot.place_id)
-      spot = build_spot(detailed_response, bjjmapper_location_id, batch_id)
-
-      detailed_response.reviews.each do |review_response|
-        review = build_review(review_response, bjjmapper_location_id, spot.place_id)
-        puts "Storing review #{review.inspect}"
-        review.upsert(@connection, place_id: spot.place_id, time: review.time, author_name: review.author_name)
-      end
-
-      detailed_response.photos.each do |photo_response|
-        photo = build_photo(photo_response, bjjmapper_location_id, spot.place_id)
-        puts "Storing photo #{photo.inspect}"
-        photo.upsert(@connection, place_id: spot.place_id, photo_reference: photo.photo_reference)
-      end
-
       if Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) < DISTANCE_THRESHOLD_MI
-        puts "WARNING: primary spot #{spot.place_id} is #{DISTANCE_THRESHOLD_MI}mi from the location"
         puts "Storing primary spot #{spot.place_id}"
-        spot.primary = true
+        Resque.enqueue(GoogleFetchAndAssociateJob, {
+          place_id: spot.place_id,
+          bjjmapper_location_id: bjjmapper_location_id
+        })
       end
-
+      
       spot.upsert(@connection, place_id: spot.place_id)
     end
 

@@ -32,16 +32,14 @@ describe YelpSearchJob do
           yelp.stub(:search).and_return(yelp_response)
       end
       
-      it 'calls .business on the client for the best (first) result' do
-        yelp.stub(:reviews)
-        yelp.should_receive(:business)
-          .with(expected_id)
-          .and_return(yelp_business)
+      it 'enqueues an associate job for the first/best listing' do
+        Resque.should_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(yelp_id: expected_id))
 
         YelpSearchJob.perform(model)
       end
 
-      it 'calls .reviews on the client for the best (first) result' do
+      # These tests need to be moved to the FetchAndAssociate spec
+      xit 'calls .reviews on the client for the best (first) result' do
         yelp.stub(:business).and_return(yelp_business)
         yelp.should_receive(:reviews)
           .with(expected_id)
@@ -50,7 +48,7 @@ describe YelpSearchJob do
         YelpSearchJob.perform(model)
       end
       
-      it 'upserts the first listing' do
+      xit 'upserts the first listing' do
         yelp.stub(:reviews)
         yelp.should_receive(:business)
           .with(expected_id)
