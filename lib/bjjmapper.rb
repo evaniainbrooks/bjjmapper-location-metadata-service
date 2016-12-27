@@ -21,7 +21,10 @@ class BJJMapper
 
     begin
       response = http.request(request)
-      return nil unless response.code.to_i == 200
+      unless response.code.to_i == 200
+        puts "Unexpected response #{response.inspect}"
+        return nil
+      end
 
       JSON.parse(response.body)
     rescue StandardError => e
@@ -41,7 +44,10 @@ class BJJMapper
 
     begin
       response = http.request(request)
-      return nil unless response.code.to_i == 200
+      unless response.code.to_i == 200
+        puts "Unexpected response #{response.inspect}"
+        return nil
+      end
       
       JSON.parse(response.body)
     rescue StandardError => e
