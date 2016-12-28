@@ -39,6 +39,7 @@ module GoogleFetchAndAssociateJob
   def self.build_listing(response, location_id)
     GooglePlacesSpot.new(response).tap do |o|
       o.bjjmapper_location_id = location_id
+      o.primary = true
     end
   end
 
