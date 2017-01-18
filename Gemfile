@@ -1,6 +1,7 @@
 source 'https://rubygems.org'
 ruby '2.1.1'
 gem 'sinatra'
+gem 'activesupport'
 gem 'andand'
 gem 'foreman'
 gem 'unicorn'
@@ -11,6 +12,7 @@ gem 'json'
 gem 'koala', '~> 2.2'
 gem 'thin'
 gem 'http'
+gem 'levenshtein-ffi', :require => 'levenshtein'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'

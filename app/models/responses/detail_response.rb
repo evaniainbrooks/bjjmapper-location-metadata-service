@@ -1,21 +1,37 @@
+require 'levenshtein'
+
+require_relative '../../../lib/circle_distance'
+
 module Responses
   class DetailResponse
-    def self.respond(spot_models, combined = false)
+    def self.respond(context, spot_models)
       attributes = spot_models.values.map do |spot_model|
         unless spot_model.nil?
           h = spot_model.as_json
           h[:opening_hours] = events_for_opening_hours(spot_model.opening_hours) if spot_model.respond_to?(:opening_hours)
+          h[:levenshtein_distance] = address_distance(
+            context[:address].except(:lat, :lng), 
+            h.slice(:street, :city, :state, :country, :postal_code)) if context[:address]
+          h[:distance] = Math.circle_distance(
+            context[:address][:lat], context[:address][:lng], 
+            h[:lat], h[:lng]) if context[:address]
           h
         end
       end.compact
 
-      if combined
+      if context[:combined]
         (attributes || []).inject({}) do |hash, attrs|
           hash.merge(attrs.delete_if{|k,v| v.nil?})
         end.merge(source: 'Multiple').to_json
       else
         attributes.to_json
       end
+    end
+
+    def self.address_distance(addr0, addr1)
+      val = Levenshtein.distance(addr0.values.compact.join(', '), addr1.values.compact.join(', '))
+      puts "Comparing \"#{addr0.values.compact.join(', ')}\" with \"#{addr1.values.compact.join(', ')}\" returned #{val}"
+      val
     end
 
     def self.events_for_opening_hours(opening_hours)

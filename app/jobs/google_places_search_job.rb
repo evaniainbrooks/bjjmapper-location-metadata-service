@@ -3,8 +3,6 @@ require 'mongo'
 require 'google_places'
 require_relative '../../config'
 require_relative '../models/google_places_spot'
-require_relative '../models/google_places_review'
-require_relative '../models/google_places_photo'
 require_relative '../../lib/circle_distance'
 require_relative './google_fetch_and_associate_job'
 
@@ -73,26 +71,10 @@ module GooglePlacesSearchJob
     spots
   end
 
-  def self.build_photo(response, location_id, place_id)
-    GooglePlacesPhoto.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.place_id = place_id
-      o.large_url = response.fetch_url(LARGE_IMAGE_WIDTH)
-      o.url = response.fetch_url(IMAGE_WIDTH)
-    end
-  end
-
   def self.build_spot(response, location_id, batch_id)
     GooglePlacesSpot.new(response).tap do |o|
       o.bjjmapper_location_id = location_id
       o.batch_id = batch_id
-    end
-  end
-
-  def self.build_review(response, location_id, place_id)
-    GooglePlacesReview.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.place_id = place_id
     end
   end
 end

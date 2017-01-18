@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'sinatra'
+require 'active_support/all'
 require 'mongo'
 require 'json/ext'
 require 'resque'
@@ -101,10 +102,20 @@ module LocationFetchService
     end
 
     get '/locations/:bjjmapper_location_id/detail' do
-      combined = (params[:combined] || 0).to_i == 1 ? true : false
-      return Responses::DetailResponse.respond(
-        {google: @spot, yelp: @yelp_business}, 
-        combined)
+      context = {
+        combined: (params[:combined] || 0).to_i == 1 ? true : false,
+        address: {
+          lat: params[:lat].to_f,
+          lng: params[:lng].to_f,
+          street: params[:street],
+          city: params[:city],
+          state: params[:state],
+          country: params[:country],
+          postal_code: params[:postal_code]
+        }
+      }
+      return Responses::DetailResponse.respond(context,
+        {google: @spot, yelp: @yelp_business})
     end
     
     post '/locations/:bjjmapper_location_id/associate' do

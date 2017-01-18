@@ -6,7 +6,7 @@ class GooglePlacesSpot
   SLICE_ATTRIBUTES = [
       :lat, :lng, :name, :icon, 
       :vicinity, :formatted_phone_number, 
-      :international_phone_number, :street_number, 
+      :international_phone_number, 
       :street, :city, :region, :postal_code, :country, 
       :rating, :url, :website, :review_summary, :price_level, 
       :opening_hours, :utc_offset, :place_id].freeze
@@ -25,6 +25,6 @@ class GooglePlacesSpot
     SLICE_ATTRIBUTES.inject({}) do |hash, k|
       hash[k] = self.send(k) if self.respond_to?(k)
       hash
-    end.merge(title: self.name, place_url: url)
+    end.merge(title: self.name, place_url: url, street: "#{self.street_number} #{self.street}", source: 'Google')
   end
 end
