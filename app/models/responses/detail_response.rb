@@ -4,14 +4,14 @@ require_relative '../../../lib/circle_distance'
 
 module Responses
   class DetailResponse
+    ADDRESS_COMPONENTS = [:street, :city, :state, :country, :postal_code].freeze
+
     def self.respond(context, spot_models)
       attributes = spot_models.values.map do |spot_model|
         unless spot_model.nil?
           h = spot_model.as_json
           h[:opening_hours] = events_for_opening_hours(spot_model.opening_hours) if spot_model.respond_to?(:opening_hours)
-          h[:levenshtein_distance] = address_distance(
-            context[:address].except(:lat, :lng), 
-            h.slice(:street, :city, :state, :country, :postal_code)) if context[:address]
+          h[:levenshtein_distance] = address_distance(context[:address], h) if context[:address]
           h[:distance] = Math.circle_distance(
             context[:address][:lat], context[:address][:lng], 
             h[:lat], h[:lng]) if context[:address]
@@ -28,9 +28,15 @@ module Responses
       end
     end
 
+    def self.address_string(address_components)
+      ADDRESS_COMPONENTS.map {|k| address_components[k] }.compact.join(', ')
+    end
+
     def self.address_distance(addr0, addr1)
-      val = Levenshtein.distance(addr0.values.compact.join(', '), addr1.values.compact.join(', '))
-      puts "Comparing \"#{addr0.values.compact.join(', ')}\" with \"#{addr1.values.compact.join(', ')}\" returned #{val}"
+      cmp0 = address_string(addr0)
+      cmp1 = address_string(addr1)
+      val = Levenshtein.distance(cmp0, cmp1)
+      puts "Comparing \"#{cmp0}\" with \"#{cmp1}\" returned #{val}"
       val
     end
 

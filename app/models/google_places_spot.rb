@@ -21,10 +21,22 @@ class GooglePlacesSpot
   
   attr_accessor *COLLECTION_FIELDS
 
+  def address_components
+    {
+      street: "#{self.street_number} #{self.street}",
+      city: city,
+      state: region,
+      country: country,
+      postal_code: postal_code
+    }
+  end
+
   def as_json
-    SLICE_ATTRIBUTES.inject({}) do |hash, k|
+    attrs = SLICE_ATTRIBUTES.inject({}) do |hash, k|
       hash[k] = self.send(k) if self.respond_to?(k)
       hash
-    end.merge(title: self.name, place_url: url, street: "#{self.street_number} #{self.street}", source: 'Google')
+    end
+      
+    attrs.merge(address_components).merge(title: self.name, place_url: url, source: 'Google')
   end
 end

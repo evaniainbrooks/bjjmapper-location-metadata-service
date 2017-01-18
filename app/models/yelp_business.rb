@@ -18,14 +18,24 @@ class YelpBusiness
 
   attr_accessor *COLLECTION_FIELDS
 
+  def address_components
+    format_street = address.present? ? address.join(' ') : [address1, address2, address3].compact.join(' ')
+    {
+      street: format_street,
+      city: city, 
+      state: state || state_code, 
+      country: country || country_code, 
+      postal_code: zip_code || postal_code
+    }
+  end
+
   def as_json
+
     {
       source: 'Yelp', lat: lat, lng: lng, title: name, icon: snippet_image_url,
       is_closed: is_closed, is_claimed: is_claimed, phone: phone, website: website,
-      formatted_phone: display_phone, city: city, country: country || country_code, 
-      postal_code: zip_code || postal_code, state: state || state_code, 
-      street: [address1, address2, address3].compact.join(' '), yelp_id: yelp_id
-    }
+      formatted_phone: display_phone, yelp_id: yelp_id
+    }.merge(address_components)
   end
 end
 
