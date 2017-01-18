@@ -27,13 +27,15 @@ module GooglePlacesSearchJob
 
     spots.first.tap do |spot|
       puts "Fetching detailed information for #{spot.place_id}"
-      if Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng']) < DISTANCE_THRESHOLD_MI
-        puts "Storing primary spot #{spot.place_id}"
-        Resque.enqueue(GoogleFetchAndAssociateJob, {
-          place_id: spot.place_id,
-          bjjmapper_location_id: bjjmapper_location_id
-        })
+      distance = Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng'])
+      if distance >= DISTANCE_THRESHOLD_MI
+        puts "*** WARNING: Spot is #{distance} away from location"
       end
+        
+      Resque.enqueue(GoogleFetchAndAssociateJob, {
+        place_id: spot.place_id,
+        bjjmapper_location_id: bjjmapper_location_id
+      })
     end
 
     spots.drop(1).each do |spot|
