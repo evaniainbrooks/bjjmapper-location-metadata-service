@@ -270,9 +270,11 @@ class Address
   end
 
   def normalize
+    normalized_postal_code = @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
+    normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
     components = @address_components.merge({
-      country: COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country],
-      postal_code: @address_components[:postal_code].gsub(/\s+/, '').upcase
+      country: normalized_country,
+      postal_code: normalized_postal_code
     })
 
     return Address.new(components)
