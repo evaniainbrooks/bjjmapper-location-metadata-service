@@ -29,13 +29,13 @@ module GooglePlacesSearchJob
       puts "Fetching detailed information for #{spot.place_id}"
       distance = Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng'])
       if distance >= DISTANCE_THRESHOLD_MI
-        puts "*** WARNING: Spot is #{distance} away from location"
+        puts "*** WARNING: Spot is #{distance} away from location, ignoring!"
+      else
+        Resque.enqueue(GoogleFetchAndAssociateJob, {
+          place_id: spot.place_id,
+          bjjmapper_location_id: bjjmapper_location_id
+        })
       end
-        
-      Resque.enqueue(GoogleFetchAndAssociateJob, {
-        place_id: spot.place_id,
-        bjjmapper_location_id: bjjmapper_location_id
-      })
     end
 
     spots.drop(1).each do |spot|
@@ -56,7 +56,7 @@ module GooglePlacesSearchJob
     bjjmapper_location_id = model['id']
 
     puts "Searching for spots"
-    spots = @places_client.spots(lat, lng, name: title)
+    spots = @places_client.spots(lat, lng, name: title, radius: 5000, rankby: 'distance')
     puts "Got response #{spots.count} spots for location #{bjjmapper_location_id} (using title)"
     if spots.nil?
       spots = @places_client.spots(lat, lng, types: ['gym', 'health'])

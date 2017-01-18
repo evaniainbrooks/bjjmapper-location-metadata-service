@@ -91,7 +91,7 @@ module GoogleIdentifyCandidateLocationsJob
     lng = model['lng']
     title = model['title'] || DEFAULT_TITLE
 
-    spots = @places_client.spots(lat, lng, name: title, types: CATEGORY_FILTER_MARTIAL_ARTS)
+    spots = @places_client.spots(lat, lng, name: title, radius: 50000, types: CATEGORY_FILTER_MARTIAL_ARTS)
     puts "Got response #{spots.count} spots for #{lat}, #{lng}  (using type: gym, health)"
 
     spots
