@@ -30,12 +30,12 @@ module GooglePlacesSearchJob
       distance = Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng'])
       if distance >= DISTANCE_THRESHOLD_MI
         puts "*** WARNING: Spot is #{distance} away from location, ignoring!"
-      else
-        Resque.enqueue(GoogleFetchAndAssociateJob, {
-          place_id: spot.place_id,
-          bjjmapper_location_id: bjjmapper_location_id
-        })
       end
+      
+      Resque.enqueue(GoogleFetchAndAssociateJob, {
+        place_id: spot.place_id,
+        bjjmapper_location_id: bjjmapper_location_id
+      })
     end
 
     spots.drop(1).each do |spot|
