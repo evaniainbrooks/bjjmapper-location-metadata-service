@@ -26,7 +26,7 @@ module GooglePlacesSearchJob
     end
 
     spots.first.tap do |spot|
-      puts "Fetching detailed information for #{spot.place_id}"
+      puts "Fetching detailed information for #{spot.place_id} #{spot.inspect}"
       distance = Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng'])
       if distance >= DISTANCE_THRESHOLD_MI
         puts "*** WARNING: Spot is #{distance} away from location, ignoring!"
@@ -56,7 +56,7 @@ module GooglePlacesSearchJob
     bjjmapper_location_id = model['id']
 
     puts "Searching for spots"
-    spots = @places_client.spots(lat, lng, name: title, radius: 5000, rankby: 'distance')
+    spots = @places_client.spots(lat, lng, name: title, radius: 5000)
     puts "Got response #{spots.count} spots for location #{bjjmapper_location_id} (using title)"
     if spots.nil?
       spots = @places_client.spots(lat, lng, types: ['gym', 'health'])
