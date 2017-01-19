@@ -280,11 +280,18 @@ class Address
     return Address.new(components)
   end
 
+  def [](sym)
+    @address_components[sym]
+  end
+
   def to_s(keys = ADDRESS_COMPONENTS)
     keys.map {|k| @address_components[k] }.compact.join(', ') 
   end
 
   def distance(components0, compare_keys = ADDRESS_COMPONENTS)
-    Levenshtein.distance(self.normalize.to_s(compare_keys), components0.normalize.to_s(compare_keys))
+    street_distance = Levenshtein.distance(self.normalize[:street], components0.normalize[:street])
+    tail_distance = Levenshtein.distance(self.normalize.to_s(compare_keys - [:street]), components0.normalize.to_s(compare_keys - [:street]))
+  
+    return street_distance + (tail_distance * 0.5)
   end
 end
