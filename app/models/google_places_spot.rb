@@ -22,7 +22,7 @@ class GooglePlacesSpot
   attr_accessor *COLLECTION_FIELDS
 
   def address_components
-    street_component = self.street ? "#{self.street_number} #{self.street}" if self.street
+    street_component = "#{self.street_number} #{self.street}" if self.street
     street_component ||= self.vicinity.split(', ')[0] if self.vicinity
 
     {
