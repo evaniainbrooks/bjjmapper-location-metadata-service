@@ -8,18 +8,25 @@ class YelpReview
 
   attr_accessor *COLLECTION_FIELDS
 
+  def key
+    ['YelpReview', self.yelp_id, self.time].join('-')
+  end
+
+  def time
+    self.time_created.is_a?(String) ? Time.parse(self.time_created).to_i : self.time_created
+  end
+
   def as_json
-    created = self.time_created.is_a?(String) ? Time.parse(self.time_created).to_i : self.time_created
 
     {
       author_name: self.user_name,
       author_url: (self.user_id.nil? ? self.url : "https://www.yelp.com/user_details?userid=#{self.user_id}"),
       text: self.excerpt || self.text,
       rating: self.rating,
-      time: created,
+      time: self.time, 
       yelp_id: self.yelp_id,
       source: 'Yelp',
-      key: "Yelp#{created}"
+      key: self.key
     }
   end
 end

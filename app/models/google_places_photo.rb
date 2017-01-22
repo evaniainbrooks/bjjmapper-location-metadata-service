@@ -7,10 +7,14 @@ class GooglePlacesPhoto
 
   attr_accessor *COLLECTION_FIELDS
 
+  def key
+    ['GooglePhoto', self.place_id, self.photo_reference].join('-')
+  end
+
   def as_json
-    COLLECTION_FIELDS.inject({}) do |hash, k|
+    (COLLECTION_FIELDS - [:_id]).inject({}) do |hash, k|
       hash[k] = self.send(k)
       hash
-    end
+    end.merge(key: key, source: 'Google')
   end
 end

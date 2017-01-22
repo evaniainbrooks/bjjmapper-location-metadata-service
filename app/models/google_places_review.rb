@@ -7,9 +7,13 @@ class GooglePlacesReview
 
   attr_accessor *COLLECTION_FIELDS
 
+  def key
+    ['GoogleReview', self.place_id, self.time].join('-')
+  end
+  
   def as_json
-    [:author_name, :author_url, :text, :time, :place_id, :rating].inject({}) do |hash, k|
+    [:author_name, :author_url, :text, :time, :place_id, :rating, :key].inject({}) do |hash, k|
       hash[k] = self.send(k); hash
-    end.merge(source: 'Google', key: "Google#{self.send(:time)}")
+    end.merge(source: 'Google') 
   end
 end

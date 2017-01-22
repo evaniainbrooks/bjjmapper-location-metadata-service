@@ -1,9 +1,11 @@
 module Responses
   class ReviewsResponse
-    def self.respond(listings, reviews)
+    def self.respond(listings, listing_reviews)
+      reviews = build_reviews_hash(listing_reviews)
       return {
-        rating: calculate_total_rating(listings, reviews),
-        reviews: build_reviews_hash(reviews)
+        rating: calculate_total_rating(listings, listing_reviews),
+        count: reviews.count,
+        reviews: reviews
       }.to_json
     end
 
@@ -11,7 +13,9 @@ module Responses
       review_models.keys.inject([]) do |arr, src|
         reviews = review_models[src].map{|o|o.as_json} unless review_models[src].nil?
         arr.concat(reviews || [])
-      end.uniq{|o|o[:key]}
+      end
+        .uniq{|o| o[:key]}
+        .uniq{|o| [o[:author_name], o[:text]]}
     end
 
     def self.calculate_total_rating(spot_models, review_models)
