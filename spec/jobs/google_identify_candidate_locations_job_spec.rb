@@ -7,6 +7,8 @@ describe GoogleIdentifyCandidateLocationsJob do
     before do
       GoogleIdentifyCandidateLocationsJob.instance_variable_set("@bjjmapper", bjjmapper)
       GoogleIdentifyCandidateLocationsJob.instance_variable_set("@places_client", google_places)
+    
+      Resque.stub(:enqueue)
     end
 
     def stub_bjjmapper_search(response = [])

@@ -7,6 +7,8 @@ describe YelpIdentifyCandidateLocationsJob do
     before do
       YelpIdentifyCandidateLocationsJob.instance_variable_set("@bjjmapper", bjjmapper)
       YelpIdentifyCandidateLocationsJob.instance_variable_set("@client", yelp)
+      
+      Resque.stub(:enqueue)
     end
 
     def stub_bjjmapper_search(response = [])

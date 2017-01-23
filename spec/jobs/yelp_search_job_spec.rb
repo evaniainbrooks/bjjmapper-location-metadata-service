@@ -6,6 +6,8 @@ describe YelpSearchJob do
   before do
     YelpSearchJob.instance_variable_set("@bjjmapper", bjjmapper)
     YelpSearchJob.instance_variable_set("@client", yelp)
+    
+    Resque.stub(:enqueue)
   end
 
   describe '#perform' do
