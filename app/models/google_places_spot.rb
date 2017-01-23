@@ -40,6 +40,11 @@ class GooglePlacesSpot
       hash
     end
       
-    attrs.merge(address_components).merge(title: self.name, place_url: url, source: 'Google')
+    attrs.merge(address_components).merge(
+      source: 'Google', 
+      title: self.name, 
+      url: url, 
+      google_id: self.place_id
+    )
   end
 end

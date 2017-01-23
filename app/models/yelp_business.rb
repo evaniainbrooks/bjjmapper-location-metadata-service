@@ -30,11 +30,19 @@ class YelpBusiness
   end
 
   def as_json
-
     {
-      source: 'Yelp', lat: lat, lng: lng, title: name, icon: snippet_image_url,
-      is_closed: is_closed, is_claimed: is_claimed, phone: phone, website: website,
-      formatted_phone: display_phone, yelp_id: yelp_id
+      source: 'Yelp', 
+      url: "http://yelp.com/biz/#{yelp_id}",
+      yelp_id: yelp_id,
+      lat: lat, lng: lng, 
+      title: name, 
+      image_url: image_url,
+      icon: snippet_image_url,
+      is_closed: is_closed, 
+      is_claimed: is_claimed, 
+      phone: phone, 
+      website: website,
+      formatted_phone: display_phone
     }.merge(address_components)
   end
 end

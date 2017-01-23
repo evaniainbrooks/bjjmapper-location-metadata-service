@@ -1,8 +1,9 @@
+require 'koala'
+
 module LocationFetchService
   DATABASE_HOST = ENV['RACK_ENV'] == 'production' ? 'services.bjjmapper.com' : 'localhost'
   DATABASE_PORT = 27017
   DATABASE_APP_DB = 'location_fetch_service' 
-  DATABASE_QUEUE_DB = 'resque'
 
   QUEUE_NAME = "locations"
 
@@ -15,4 +16,6 @@ module LocationFetchService
   }.freeze
 
   APP_API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"
+
+  Koala.config.api_version = "v2.8"
 end

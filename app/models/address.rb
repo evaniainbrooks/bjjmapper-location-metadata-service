@@ -260,7 +260,34 @@ CSV.parse(abbrevcsv) do |row|
   country_lookup[row[1]] = country
   country_lookup[row[2]] = country
 end
-COUNTRY_LOOKUP = country_lookup
+COUNTRY_LOOKUP = country_lookup.freeze
+ABBREV_LOOKUP = {
+  'ST' => 'Street',
+  'AVE' => 'Avenue',
+  'AV' => 'Avenue',
+  'AVN' => 'Avenue',
+  'BLVD' => 'Boulevard',
+  'BYP' => 'Bypass',
+  'HWY' => 'Highway',
+  'CR' => 'Crescent',
+  'CRE' => 'Crescent',
+  'CRES' => 'Crescent',
+  'EST' => 'Estate',
+  'EXT' => 'Extension',
+  'EXTN' => 'Extension',
+  'DRV' => 'Drive',
+  'DR' => 'Drive',
+  'RTE' => 'Route',
+  'RD' => 'Road',
+  'E' => 'East',
+  'W' => 'West',
+  'N' => 'North',
+  'S' => 'South',
+  'NE' => 'Northeast',
+  'NW' => 'Northwest',
+  'SE' => 'Southeast',
+  'SW' => 'Southwest'
+}.freeze
 
 class Address
   ADDRESS_COMPONENTS = [:street, :city, :state, :country, :postal_code].freeze
@@ -272,6 +299,8 @@ class Address
   def normalize
     normalized_postal_code = @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
     normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
+    #inormalized_street = @address_components[:street].gsub("[^\w]#{ABBREV_LOOKUP.keys.join('|')}[^\w]",
+    
     components = @address_components.merge({
       country: normalized_country,
       postal_code: normalized_postal_code

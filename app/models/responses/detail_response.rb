@@ -1,5 +1,6 @@
 require 'levenshtein'
 
+require 'levenshtein'
 require_relative '../../../lib/circle_distance'
 require_relative '../address'
 
@@ -11,11 +12,14 @@ module Responses
       attributes = listings.values.map do |listing|
         next if listing.nil?
         listing.as_json.tap do |h|
+          if context[:title]
+            h[:title_levenshtein_distance] = Levenshtein.distance(h[:title], context[:title])
+          end
           if listing.respond_to?(:opening_hours)
             h[:opening_hours] = events_for_opening_hours(listing.opening_hours)
           end
           if compare_address
-            h[:levenshtein_distance] = Address.new(h).distance(compare_address, Address::ADDRESS_COMPONENTS - [:state])
+            h[:address_levenshtein_distance] = Address.new(h).distance(compare_address, Address::ADDRESS_COMPONENTS - [:state])
             h[:distance] = Math.circle_distance(context[:address][:lat], context[:address][:lng], h[:lat], h[:lng])
           end
         end

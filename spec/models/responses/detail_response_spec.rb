@@ -2,7 +2,9 @@ require File.expand_path '../../../spec_helper.rb', __FILE__
 
 describe 'DetailResponse' do
   describe '#respond' do
+    let(:title) { 'some title' }
     let(:address_components) { {
+        title: title,
         lat: 80.0,
         lng: 80.0,
         street: 'street',
@@ -25,7 +27,13 @@ describe 'DetailResponse' do
       end
 
       it 'returns the difference of the listing address' do
-        JSON.parse(result)[0]['levenshtein_distance'].should eq 0
+        JSON.parse(result)[0]['address_levenshtein_distance'].should eq 0
+      end
+    end
+    context 'with compare title' do
+      let(:result) { Responses::DetailResponse.respond({title: title}, listings) }
+      it 'returns the difference of the listing title' do
+        JSON.parse(result)[0]['title_levenshtein_distance'].should eq 0
       end
     end
     context 'without compare address' do

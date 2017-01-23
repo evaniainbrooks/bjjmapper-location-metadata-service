@@ -4,14 +4,18 @@ require 'active_support/all'
 require 'mongo'
 require 'json/ext'
 require 'resque'
+require 'redis'
 
 require_relative './config'
+require_relative 'app/jobs/facebook_search_job'
 require_relative 'app/jobs/google_places_search_job'
 require_relative 'app/jobs/yelp_search_job'
 require_relative 'app/jobs/google_identify_candidate_locations_job'
 require_relative 'app/jobs/yelp_identify_candidate_locations_job'
-require_relative 'app/jobs/yelp_fetch_and_associate_job'
 require_relative 'app/jobs/google_fetch_and_associate_job'
+require_relative 'app/jobs/yelp_fetch_and_associate_job'
+
+require_relative 'app/models/facebook_page'
 
 require_relative 'app/models/google_places_review'
 require_relative 'app/models/google_places_spot'
@@ -36,14 +40,12 @@ module LocationFetchService
       set :port, ENV['PORT']
 
       set :app_database_name, DATABASE_APP_DB
-      set :resque_database_name, DATABASE_QUEUE_DB
 
       connection = MongoClient.new(DATABASE_HOST, DATABASE_PORT)
       set :mongo_connection, connection
       set :app_db, connection.db(settings.app_database_name)
-      set :queue_db, connection.db(settings.resque_database_name)
 
-      Resque.mongo = settings.queue_db
+      Resque.redis = ::Redis.new(host: DATABASE_HOST, password: ENV['REDIS_PASS'])
     end
 
     #
@@ -59,6 +61,7 @@ module LocationFetchService
       id = params[:bjjmapper_location_id]
       conditions = {primary: true, bjjmapper_location_id: id}
 
+      @page = FacebookPage.find(settings.app_db, conditions)
       @spot = GooglePlacesSpot.find(settings.app_db, conditions)
       @yelp_business = YelpBusiness.find(settings.app_db, conditions)
     end
@@ -66,7 +69,7 @@ module LocationFetchService
     before '/locations/*' do
       pass if 'associate' == request.path_info.split('/')[2]
 
-      if @spot.nil? && @yelp_business.nil?
+      if @spot.nil? && @yelp_business.nil? && @page.nil?
         puts "No listings found"
         halt 404 and return false
       end
@@ -104,6 +107,7 @@ module LocationFetchService
     get '/locations/:bjjmapper_location_id/detail' do
       context = {
         combined: (params[:combined] || 0).to_i == 1 ? true : false,
+        title: params[:title],
         address: {
           lat: params[:lat].to_f,
           lng: params[:lng].to_f,
@@ -115,10 +119,35 @@ module LocationFetchService
         }
       }
       return Responses::DetailResponse.respond(context,
-        {google: @spot, yelp: @yelp_business})
+        {google: @spot, yelp: @yelp_business, facebook: @page})
     end
     
     post '/locations/:bjjmapper_location_id/associate' do
+      if params[:facebook_id]
+        puts "Checking facebook association"
+        if @page && params[:facebook_id] != @page.facebook_id
+          puts "Updating existing listing #{@page.facebook_id}"
+          @page.primary = false
+          @page.save(settings.app_db)
+        end
+        
+        location_id = params[:bjjmapper_location_id]
+        conditions = {facebook_id: params[:facebook_id]}
+        new_page = FacebookPage.find(settings.app_db, conditions)
+        if !new_page.nil?
+          puts "New associated listing exists #{new_page.facebook_id}"
+          new_page.bjjmapper_location_id = location_id
+          new_page.primary = true
+          new_page.save(settings.app_db)
+        else
+          puts "New associated listing does not exist, fetching"
+          Resque.enqueue(FacebookFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            facebook_id: params[:facebook_id]
+          })
+        end
+      end
+
       if params[:google_id]
         puts "Checking google association"
         if @spot && params[:google_id] != @spot.place_id
@@ -200,6 +229,7 @@ module LocationFetchService
       else
         Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
         Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
+        Resque.enqueue(FacebookSearchJob, @location) if scope.nil? || (scope == 'facebook')
       end
       status 202
     end

@@ -25,6 +25,7 @@ describe 'LocationFetchService' do
         before do
           Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
           Resque.should_receive(:enqueue).with(YelpSearchJob, anything)
+          Resque.should_receive(:enqueue).with(FacebookSearchJob, anything)
         end
         it 'enqueues search jobs and returns 202' do
           post "/search/async?api_key=#{api_key}", request, content_type

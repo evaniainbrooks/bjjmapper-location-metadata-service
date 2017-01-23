@@ -1,6 +1,6 @@
 ---
 chdir: "/var/www/rollfindr_locationfetchsvc"
-environment: production
+environment: development 
 address: 127.0.0.1
 port: 9004
 timeout: 30
