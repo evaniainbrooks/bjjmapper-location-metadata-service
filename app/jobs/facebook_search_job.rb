@@ -3,13 +3,21 @@ require 'mongo'
 require 'koala'
 require_relative '../../config'
 require_relative '../models/facebook_page'
+require_relative '../models/facebook_photo'
 
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
   @redis = ::Redis.new(host: LocationFetchService::DATABASE_HOST, password: ENV['REDIS_PASS'])
 
-  REQUEST_FIELDS = %w(overall_star_rating rating_count posts videos feed phone place_type link is_unclaimed is_verified is_permanently_closed hours founded fan_count checkins displayed_message_response_time display_subtext about bio description rating id name picture cover email location timezone updated_at albums website).freeze
+  PICTURE_WIDTH = 1000
+
+  PHOTO_FIELDS = %w(id source name link images width height).freeze
+
+  REQUEST_FIELDS = %W(photos{#{PHOTO_FIELDS.join(',')}} overall_star_rating rating_count posts videos feed phone place_type link is_unclaimed is_verified is_permanently_closed hours founded fan_count checkins displayed_message_response_time display_subtext about bio description rating id name picture.width(#{PICTURE_WIDTH}) cover email location timezone updated_at albums{id,count,cover_photo,link,place,is_default,photos{#{PHOTO_FIELDS.join(',')}}} website).freeze
+      
+  OAUTH_TOKEN_CACHE_KEY = 'facebook-graph-oauth-token'
+  OAUTH_TOKEN_CACHE_EXPIRE = 60 * 60 * 24
 
   def self.perform(model)
     client = Koala::Facebook::API.new(oauth_token)
@@ -24,20 +32,65 @@ module FacebookSearchJob
 
     listings.first.tap do |listing|
       puts "First listing is #{listing.inspect}"
-      build_listing(listing, bjjmapper_location_id, batch_id).tap do |o|
-        o.primary = true 
-        o.upsert(@connection, facebook_id: o.facebook_id)
+      facebook_id = listing['id']
+      FacebookPage.from_response(listing, {
+        facebook_id: facebook_id, 
+        location_id: bjjmapper_location_id, 
+        batch_id: batch_id,
+        primary: true
+      }).upsert(@connection, facebook_id: facebook_id)
+
+      puts "Storing profile photo"
+      if (listing['picture'])
+        picture_response = listing['picture']['data']
+        puts "Processing image #{picture_response.inspect}"
+        
+        FacebookPhoto.from_response(picture_response, {
+          facebook_id: facebook_id, 
+          location_id: bjjmapper_location_id, 
+          is_profile_photo: true
+        }).upsert(@connection, {
+          is_profile_photo: true, 
+          facebook_id: facebook_id
+        })
       end
-      
-      #Resque.enqueue(FacebookFetchAndAssociateJob, {
-      #  bjjmapper_location_id: bjjmapper_location_id,
-      #  facebook_id: listing['id']
-      #})
+
+      puts "Storing cover photo"
+      if (listing['cover'])
+        picture_response = listing['cover']
+        puts "Processing image #{picture_response.inspect}"
+        
+        FacebookPhoto.from_response(picture_response, { 
+          facebook_id: facebook_id, 
+          location_id: bjjmapper_location_id, 
+          is_cover_photo: true
+        }).tap do |photo|
+          photo.offset_x = picture_response['offset_x']
+          photo.offset_y = picture_response['offset_y']
+          photo.upsert(@connection, {is_cover_photo: true, facebook_id: facebook_id})
+        end
+      end
+
+      puts "Storing photos"
+      process_photos(listing['photos']['data'] || [], {
+        facebook_id: facebook_id, 
+        location_id: bjjmapper_location_id
+      })
+
+      puts "Storing album photos"
+      (listing['albums']['data'] || []).each do |album|
+        album_id = album['id']
+        process_photos(album['photos']['data'] || [], {
+          facebook_id: facebook_id, 
+          location_id: bjjmapper_location_id, 
+          album_id: album_id
+        })
+      end
     end
 
     listings.drop(1).each do |listing|
       puts "Storing secondary listing #{listing['id']}"
-      build_listing(listing, bjjmapper_location_id, batch_id).tap do |o|
+      FacebookPage.from_response(listing, location_id: bjjmapper_location_id, batch_id: batch_id).tap do |o|
         o.primary = false
         o.upsert(@connection, facebook_id: o.facebook_id)
       end
@@ -45,12 +98,12 @@ module FacebookSearchJob
   end
 
   def self.oauth_token
-    token = @redis.get('facebook-graph-oauth-token')
+    token = @redis.get(OAUTH_TOKEN_CACHE_KEY)
     if token.nil?
       oauth = Koala::Facebook::OAuth.new(ENV['FACEBOOK_APP_ID'], ENV['FACEBOOK_APP_SECRET'])
       token = oauth.get_app_access_token
-      @redis.set('facebook-graph-oauth-token', token)
-      @redis.expire('facebook-graph-oauth-token', 60 * 60 * 24)
+      @redis.set(OAUTH_TOKEN_CACHE_KEY, token)
+      @redis.expire(OAUTH_TOKEN_CACHE_KEY, OAUTH_TOKEN_CACHE_EXPIRE)
     end
 
     token
@@ -73,17 +126,21 @@ module FacebookSearchJob
     response
   end
 
-  def self.build_listing(listing_response, location_id, batch_id)
-    return FacebookPage.new(listing_response).tap do |r|
-      r.name = listing_response['name']
-      r.facebook_id = listing_response['id']
-      r.merge_attributes!(listing_response['location'])
-      if listing_response['location']
-        r.lat = listing_response['location']['latitude']
-        r.lng = listing_response['location']['longitude']
+  def self.process_photos(photos, params = {})
+    photos.each do |photo|
+      photo_id = photo['id']
+      puts "Processing photo #{photo.inspect}"
+      (photo['images'] || []).each do |image|
+        puts "Processing image #{image.inspect}"
+        model = FacebookPhoto.from_response(image, params.merge(photo_id: photo_id))
+        model.upsert(@connection, { 
+          width: model.width, 
+          height: model.height, 
+          album_id: model.album_id,
+          facebook_id: model.facebook_id, 
+          photo_id: model.photo_id
+        })
       end
-      r.bjjmapper_location_id = location_id
-      r.batch_id = batch_id
     end
   end
 end

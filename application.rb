@@ -79,12 +79,20 @@ module LocationFetchService
     # Locations routes
     #
     get '/locations/:bjjmapper_location_id/photos' do
-      halt 404 and return false if @spot.nil?
+      unless @spot.nil?
+        google_photos_conditions = {place_id: @spot.place_id}
+        @google_photos = GooglePlacesPhoto.find_all(settings.app_db, google_photos_conditions)
+      end
+      
+      unless @page.nil?
+        facebook_photos_conditions = {facebook_id: @page.facebook_id}
+        @facebook_photos = FacebookPhoto.find_all(settings.app_db, facebook_photos_conditions)
+      end
 
-      photo_conditions = {place_id: @spot.place_id}
-      photo_models = GooglePlacesPhoto.find_all(settings.app_db, photo_conditions)
-
-      Responses::PhotosResponse.respond(@spot, photo_models)
+      Responses::PhotosResponse.respond(
+        {google: @spot, facebook: @page}, 
+        {google: @google_photos, facebook: @facebook_photos}
+      )
     end
 
     get '/locations/:bjjmapper_location_id/reviews' do

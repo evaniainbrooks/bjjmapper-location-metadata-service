@@ -12,6 +12,19 @@ class FacebookPage
                        :bjjmapper_location_id, :batch_id, :primary].freeze
 
   attr_accessor *COLLECTION_FIELDS
+  
+  def self.from_response(listing_response, params = {})
+    return FacebookPage.new(listing_response).tap do |r|
+      r.facebook_id = listing_response['id']
+      r.merge_attributes!(listing_response['location'])
+      if listing_response['location']
+        r.lat = listing_response['location']['latitude']
+        r.lng = listing_response['location']['longitude']
+      end
+      r.bjjmapper_location_id = params[:location_id]
+      r.batch_id = params[:batch_id]
+    end
+  end
 
   def address_components
     {
