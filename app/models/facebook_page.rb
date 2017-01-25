@@ -23,6 +23,7 @@ class FacebookPage
       end
       r.bjjmapper_location_id = params[:location_id]
       r.batch_id = params[:batch_id]
+      r.primary = params[:primary] || false
     end
   end
 
