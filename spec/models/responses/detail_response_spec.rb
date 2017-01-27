@@ -27,13 +27,13 @@ describe 'DetailResponse' do
       end
 
       it 'returns the difference of the listing address' do
-        JSON.parse(result)[0]['address_levenshtein_distance'].should eq 0
+        JSON.parse(result)[0]['address_match'].should eq 100.0
       end
     end
     context 'with compare title' do
       let(:result) { Responses::DetailResponse.respond({title: title}, listings) }
       it 'returns the difference of the listing title' do
-        JSON.parse(result)[0]['title_levenshtein_distance'].should eq 0
+        JSON.parse(result)[0]['title_match'].should eq 100.0
       end
     end
     context 'without compare address' do
