@@ -286,7 +286,13 @@ ABBREV_LOOKUP = {
   'NE' => 'Northeast',
   'NW' => 'Northwest',
   'SE' => 'Southeast',
-  'SW' => 'Southwest'
+  'SW' => 'Southwest',
+  'FIRST' => '1st',
+  'SECOND' => '2nd',
+  'THIRD' => '3rd',
+  'FOURTH' => '4th',
+  'FIFTH' => '5th',
+  'SIXTH' => '6th'
 }.freeze
 
 class Address
@@ -299,9 +305,10 @@ class Address
   def normalize
     normalized_postal_code = @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
     normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
-    #inormalized_street = @address_components[:street].gsub("[^\w]#{ABBREV_LOOKUP.keys.join('|')}[^\w]",
+    normalized_street = @address_components[:street].upcase.gsub(/\b\w+\b/, ABBREV_LOOKUP).capitalize
     
     components = @address_components.merge({
+      street: normalized_street,
       country: normalized_country,
       postal_code: normalized_postal_code
     })
@@ -322,6 +329,6 @@ class Address
     tail_distance = Levenshtein.distance(self.normalize.to_s(compare_keys - [:street]),
                                          components0.normalize.to_s(compare_keys - [:street]))
   
-    return street_distance + (tail_distance * 0.5)
+    total = street_distance * 2.0 + (tail_distance * 0.5)
   end
 end

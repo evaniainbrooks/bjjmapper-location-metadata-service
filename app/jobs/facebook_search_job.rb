@@ -129,9 +129,7 @@ module FacebookSearchJob
   def self.process_photos(photos, params = {})
     photos.each do |photo|
       photo_id = photo['id']
-      puts "Processing photo #{photo.inspect}"
       (photo['images'] || []).each do |image|
-        puts "Processing image #{image.inspect}"
         model = FacebookPhoto.from_response(image, params.merge(photo_id: photo_id))
         model.upsert(@connection, { 
           width: model.width, 

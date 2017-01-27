@@ -11,13 +11,16 @@ module Responses
         next if listing.nil?
         listing.as_json.tap do |h|
           if context[:title]
-            h[:title_levenshtein_distance] = Levenshtein.distance(h[:title] || "", context[:title])
+            h[:title_match] = percent(Levenshtein.distance(h[:title] || "", context[:title]), context[:title].length)
           end
           #if listing.respond_to?(:opening_hours)
           #  h[:opening_hours] = events_for_opening_hours(listing.opening_hours)
           #end
           if compare_address
-            h[:address_levenshtein_distance] = Address.new(h).distance(compare_address, Address::ADDRESS_COMPONENTS - [:state])
+            compare_keys = Address::ADDRESS_COMPONENTS - [:state]
+            distance = Address.new(h).distance(compare_address, compare_keys)
+            pct = percent(distance, compare_address.normalize.to_s(compare_keys).length)
+            h[:address_match] = pct
             h[:distance] = Math.circle_distance(context[:address][:lat], context[:address][:lng], h[:lat], h[:lng])
           end
         end
@@ -30,6 +33,10 @@ module Responses
       else
         attributes.to_json
       end
+    end
+
+    def self.percent(errors, len)
+      100.0 - ((errors / len) * 100.0)
     end
 
     def self.events_for_opening_hours(opening_hours)
