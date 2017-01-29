@@ -89,10 +89,9 @@ module LocationFetchService
         @facebook_photos = FacebookPhoto.find_all(settings.app_db, facebook_photos_conditions)
       end
 
-      Responses::PhotosResponse.respond(
-        {google: @spot, facebook: @page}, 
-        {google: @google_photos, facebook: @facebook_photos}
-      )
+      photos = {google: @google_photos, facebook: @facebook_photos}
+      count = params[:count]
+      Responses::PhotosResponse.respond(photos, count: count)
     end
 
     get '/locations/:bjjmapper_location_id/reviews' do

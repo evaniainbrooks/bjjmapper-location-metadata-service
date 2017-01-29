@@ -98,9 +98,6 @@ module GoogleIdentifyCandidateLocationsJob
   end
 
   def self.build_listing(response, batch_id)
-    GooglePlacesSpot.new(response).tap do |o|
-      o.batch_id = batch_id
-      o.primary = true
-    end
+    GooglePlacesSpot.from_response(response, batch_id: batch_id, primary: true)
   end
 end

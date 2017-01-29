@@ -1,9 +1,16 @@
 module Responses
   class PhotosResponse
-    def self.respond(spots, photos)
+    EMPTY_HASH = {}.freeze
+    DEFAULT_COUNT = 50
+
+    def self.respond(photos, opts = EMPTY_HASH)
+      count = opts[:count] || DEFAULT_COUNT
+
       google = (photos[:google] || []).collect do |o|
         o.as_json.merge(small_url: o.url.gsub(/w\d\d\d/, 'w100'))
-      end.uniq{|o| o[:key]}
+      end
+        .uniq{|o| o[:key]}
+        .uniq{|o| o[:url]}
       
       facebook = (photos[:facebook] || []).group_by do |o| 
         [o.photo_id, o.is_cover_photo, o.is_profile_photo].join
@@ -12,7 +19,7 @@ module Responses
         by_width.last.as_json.merge(small_url: by_width.first.source)
       end
 
-      [google, facebook].compact.flatten.to_json
+      [google, facebook].compact.flatten.take(count.to_i).to_json
     end
   end
 end

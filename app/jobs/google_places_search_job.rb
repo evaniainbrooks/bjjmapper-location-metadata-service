@@ -74,9 +74,6 @@ module GooglePlacesSearchJob
   end
 
   def self.build_spot(response, location_id, batch_id)
-    GooglePlacesSpot.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.batch_id = batch_id
-    end
+    GooglePlacesSpot.from_response(response, location_id: location_id, batch_id: batch_id)
   end
 end

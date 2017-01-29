@@ -115,16 +115,6 @@ module YelpIdentifyCandidateLocationsJob
   end
 
   def self.build_listing(listing_response, batch_id)
-    return YelpBusiness.new(listing_response).tap do |r|
-      r.name = listing_response['name']
-      r.yelp_id = listing_response['id']
-      r.merge_attributes!(listing_response['location'])
-      if listing_response['coordinates']
-        r.lat = listing_response['coordinates']['latitude']
-        r.lng = listing_response['coordinates']['longitude']
-      end
-      r.batch_id = batch_id
-      r.primary = true
-    end
+    return YelpBusiness.from_response(listing_response, batch_id: batch_id, primary: true)
   end
 end

@@ -27,7 +27,7 @@ describe GoogleIdentifyCandidateLocationsJob do
     let(:listing_lat) { 47.0 }
     let(:listing_lng) { -122.0 }
     let(:model) { {'title' => 'meow', 'lat' => lat, 'lng' => lng } }
-    let(:google_business) { double(place_id: 'google1234', lat: listing_lat, lng: listing_lng, name: 'google business') }
+    let(:google_business) { double(id: 'google1234', lat: listing_lat, lng: listing_lng, name: 'google business') }
     let(:google_response) { [google_business] }
     
     it 'searches google for listings' do
@@ -52,7 +52,7 @@ describe GoogleIdentifyCandidateLocationsJob do
           stub_google_search(google_response)
         end
         it 'enqueues a fetch and associate job for the closest location' do
-          Resque.should_receive(:enqueue).with(GoogleFetchAndAssociateJob, hash_including(bjjmapper_location_id: closest_location['id'], place_id: google_business.place_id))
+          Resque.should_receive(:enqueue).with(GoogleFetchAndAssociateJob, hash_including(bjjmapper_location_id: closest_location['id'], place_id: google_business.id))
 
           GoogleIdentifyCandidateLocationsJob.perform(model)
         end
@@ -72,7 +72,7 @@ describe GoogleIdentifyCandidateLocationsJob do
         end
         it 'persists the listing with the newly created location' do
           bjjmapper.stub(:create_pending_location).and_return(location_response)
-          GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything, place_id: google_business.place_id)
+          GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything, place_id: google_business.id)
 
           GoogleIdentifyCandidateLocationsJob.perform(model)
         end

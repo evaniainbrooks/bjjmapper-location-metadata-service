@@ -51,26 +51,10 @@ module YelpSearchJob
   end
 
   def self.build_listing(listing_response, location_id, batch_id)
-    return YelpBusiness.new(listing_response).tap do |r|
-      r.name = listing_response['name']
-      r.yelp_id = listing_response['id']
-      r.merge_attributes!(listing_response['location'])
-      if listing_response['coordinates']
-        r.lat = listing_response['coordinates']['latitude']
-        r.lng = listing_response['coordinates']['longitude']
-      end
-      r.bjjmapper_location_id = location_id
-      r.batch_id = batch_id
-    end
+    return YelpBusiness.from_response(listing_response, location_id: location_id, batch_id: batch_id)
   end
 
   def self.build_review(review_response, location_id, yelp_id)
-    return YelpReview.new(review_response).tap do |r|
-      r.bjjmapper_location_id = location_id
-      r.user_id = review_response['user']['id']
-      r.user_image_url = review_response['user']['image_url']
-      r.user_name = review_response['user']['name']
-      r.yelp_id = yelp_id
-    end
+    return YelpReview.from_response(review_response, location_id: location_id, yelp_id: yelp_id)
   end
 end

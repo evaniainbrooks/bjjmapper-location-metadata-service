@@ -5,12 +5,13 @@ class FacebookPhoto
   COLLECTION_NAME = 'facebook_photos'
   COLLECTION_FIELDS = [:is_cover_photo, :is_profile_photo, :photo_id,
                        :is_silhouette, :width, :height, :source, :offset_x, :offset_y,
-                       :link, :album_id, :_id, :facebook_id, :bjjmapper_location_id].freeze
+                       :link, :album_id, :_id, :facebook_id, :bjjmapper_location_id, :created_at].freeze
 
   attr_accessor *COLLECTION_FIELDS
 
   def self.from_response(photo_response, params = {})
     return FacebookPhoto.new(photo_response).tap do |o|
+      o.created_at = Time.now
       o.source ||= photo_response['url']
       o.facebook_id = params[:facebook_id]
       o.bjjmapper_location_id = params[:location_id]

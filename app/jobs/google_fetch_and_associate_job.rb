@@ -28,25 +28,14 @@ module GoogleFetchAndAssociateJob
   end
 
   def self.build_photo(response, location_id, place_id)
-    GooglePlacesPhoto.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.place_id = place_id
-      o.large_url = response.fetch_url(LARGE_IMAGE_WIDTH)
-      o.url = response.fetch_url(IMAGE_WIDTH)
-    end
+    GooglePlacesPhoto.from_response(response, location_id: location_id, place_id: place_id, url: response.fetch_url(LARGE_IMAGE_WIDTH))
   end
 
   def self.build_listing(response, location_id)
-    GooglePlacesSpot.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.primary = true
-    end
+    GooglePlacesSpot.from_response(response, location_id: location_id, primary: true)
   end
 
   def self.build_review(response, location_id, place_id)
-    GooglePlacesReview.new(response).tap do |o|
-      o.bjjmapper_location_id = location_id
-      o.place_id = place_id
-    end
+    GooglePlacesReview.from_response(response, location_id: location_id, place_id: place_id)
   end
 end

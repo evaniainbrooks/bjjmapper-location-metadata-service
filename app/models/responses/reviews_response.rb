@@ -32,6 +32,8 @@ module Responses
     end
 
     def self.calculate_rating(spot, reviews)
+      return nil unless spot.rating && reviews.size > 0
+      
       rating = spot.rating
       rating = rating || begin
         reviews.inject(0.0) do |sum, r|

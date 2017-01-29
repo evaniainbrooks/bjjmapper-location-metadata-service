@@ -9,17 +9,26 @@ class GooglePlacesSpot
       :international_phone_number, 
       :street, :city, :region, :postal_code, :country, 
       :rating, :url, :website, :review_summary, :price_level, 
-      :opening_hours, :utc_offset, :place_id].freeze
+      :opening_hours, :utc_offset, :place_id, :created_at].freeze
 
-  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id, 
-                 :formatted_phone_number, :international_phone_number, 
-                 :address_components, :street_number, :street, :city, :region, :postal_code,
-                 :country, :rating, :url, :cid, :website, :aspects, :zagat_selected,
-                 :zagat_reviewed, :review_summary, :nextpagetoken, :price_level,
-                 :opening_hours, :events, :utc_offset, :place_id,
-                 :_id, :bjjmapper_location_id, :batch_id, :primary]
+  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, 
+                       :types, :id, :formatted_phone_number, :international_phone_number, 
+                       :address_components, :street_number, :street, :city, :region, :postal_code,
+                       :country, :rating, :url, :cid, :website, :aspects, :zagat_selected, :zagat_reviewed, 
+                       :review_summary, :nextpagetoken, :price_level, :opening_hours, :events, :utc_offset, 
+                       :place_id, :_id, :bjjmapper_location_id, :batch_id, :primary, :created_at].freeze
   
   attr_accessor *COLLECTION_FIELDS
+
+  def self.from_response(response, params = {})
+    GooglePlacesSpot.new(response).tap do |o|
+      o.created_at = Time.now
+      o.place_id = response.id
+      o.primary = params[:primary]
+      o.bjjmapper_location_id = params[:location_id]
+      o.batch_id = params[:batch_id]
+    end
+  end
 
   def address_components
     street_component = "#{self.street_number} #{self.street}" if self.street

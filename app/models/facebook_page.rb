@@ -9,12 +9,13 @@ class FacebookPage
                        :name, :website, :about, :description, :picture, 
                        :cover, :hours, :feed, :posts, :lat, :lng, :city, 
                        :state, :country, :street, :zip, :facebook_id, :_id, 
-                       :bjjmapper_location_id, :batch_id, :primary].freeze
+                       :bjjmapper_location_id, :batch_id, :primary, :created_at].freeze
 
   attr_accessor *COLLECTION_FIELDS
   
   def self.from_response(listing_response, params = {})
     return FacebookPage.new(listing_response).tap do |r|
+      r.created_at = Time.now
       r.facebook_id = listing_response['id']
       r.merge_attributes!(listing_response['location'])
       if listing_response['location']

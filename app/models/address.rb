@@ -277,6 +277,7 @@ ABBREV_LOOKUP = {
   'EXTN' => 'Extension',
   'DRV' => 'Drive',
   'DR' => 'Drive',
+  'STE' => 'Suite',
   'RTE' => 'Route',
   'RD' => 'Road',
   'E' => 'East',
@@ -292,7 +293,8 @@ ABBREV_LOOKUP = {
   'THIRD' => '3rd',
   'FOURTH' => '4th',
   'FIFTH' => '5th',
-  'SIXTH' => '6th'
+  'SIXTH' => '6th',
+  'TRL' => 'Trail'
 }.freeze
 
 class Address
@@ -305,13 +307,15 @@ class Address
   def normalize
     normalized_postal_code = @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
     normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
-    normalized_street = @address_components[:street].upcase.gsub(/\b\w+\b/, ABBREV_LOOKUP).capitalize
+    normalized_street = @address_components[:street].upcase.gsub(/[^\w\s]/, '').gsub(/\b(\w+)\b/) { |match| ABBREV_LOOKUP[match] || match }.capitalize
     
     components = @address_components.merge({
       street: normalized_street,
       country: normalized_country,
       postal_code: normalized_postal_code
     })
+
+    puts "components: #{@address_components.inspect} normalized: #{components.inspect}"
 
     return Address.new(components)
   end
@@ -329,6 +333,6 @@ class Address
     tail_distance = Levenshtein.distance(self.normalize.to_s(compare_keys - [:street]),
                                          components0.normalize.to_s(compare_keys - [:street]))
   
-    total = street_distance * 2.0 + (tail_distance * 0.5)
+    total = street_distance + (tail_distance * 0.5)
   end
 end
