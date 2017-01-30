@@ -305,10 +305,16 @@ class Address
   end
 
   def normalize
-    normalized_postal_code = @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
     normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
-    normalized_street = @address_components[:street].upcase.gsub(/[^\w\s]/, '').gsub(/\b(\w+)\b/) { |match| ABBREV_LOOKUP[match] || match }.capitalize
     
+    normalized_postal_code = if @address_components[:postal_code]
+      @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
+    end
+
+    normalized_street = if @address_components[:street]
+      @address_components[:street].upcase.gsub(/[^\w\s]/, '').gsub(/\b(\w+)\b/) { |match| ABBREV_LOOKUP[match] || match }.capitalize
+    end
+
     components = @address_components.merge({
       street: normalized_street,
       country: normalized_country,
