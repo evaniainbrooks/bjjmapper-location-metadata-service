@@ -14,6 +14,9 @@ module FacebookSearchJob
 
   PHOTO_FIELDS = %w(id source name link images width height).freeze
 
+  MAX_PHOTOS_PER_ALBUM = 20
+  MAX_ALBUMS = 5
+
   REQUEST_FIELDS = %W(photos{#{PHOTO_FIELDS.join(',')}} overall_star_rating rating_count posts videos feed phone place_type link is_unclaimed is_verified is_permanently_closed hours founded fan_count checkins displayed_message_response_time display_subtext about bio description rating id name picture.width(#{PICTURE_WIDTH}) cover email location timezone updated_at albums{id,count,cover_photo,link,place,is_default,photos{#{PHOTO_FIELDS.join(',')}}} website).freeze
       
   OAUTH_TOKEN_CACHE_KEY = 'facebook-graph-oauth-token'
@@ -75,21 +78,22 @@ module FacebookSearchJob
       process_photos(listing['photos']['data'] || [], {
         facebook_id: facebook_id, 
         location_id: bjjmapper_location_id
-      })
+      }) if listing['photos']
 
       puts "Storing album photos"
-      (listing['albums']['data'] || []).each do |album|
+      (listing['albums']['data'] || []).take(MAX_ALBUMS).each do |album|
         album_id = album['id']
+        puts "Processing album #{album_id}"
         process_photos(album['photos']['data'] || [], {
           facebook_id: facebook_id, 
           location_id: bjjmapper_location_id, 
           album_id: album_id
-        })
-      end
+        }) if album['photos']
+      end if listing['albums']
     end
 
     listings.drop(1).each do |listing|
-      puts "Storing secondary listing #{listing['id']}"
+      puts "Storing secondary listing #{listing['name']}"
       FacebookPage.from_response(listing, location_id: bjjmapper_location_id, batch_id: batch_id).tap do |o|
         o.primary = false
         o.upsert(@connection, facebook_id: o.facebook_id)
@@ -129,7 +133,7 @@ module FacebookSearchJob
   def self.process_photos(photos, params = {})
     photos.each do |photo|
       photo_id = photo['id']
-      (photo['images'] || []).each do |image|
+      (photo['images'] || []).take(MAX_PHOTOS_PER_ALBUM).each do |image|
         model = FacebookPhoto.from_response(image, params.merge(photo_id: photo_id))
         model.upsert(@connection, { 
           width: model.width, 
