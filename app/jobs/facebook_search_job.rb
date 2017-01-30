@@ -126,8 +126,11 @@ module FacebookSearchJob
     })
 
     puts "Search returned #{response.count} listings"
-
-    response
+    response.select do |result|
+      !result['is_unclaimed']
+    end.tap do |filtered_response|
+      puts "After filtering there are #{filtered_response.count} listings"
+    end
   end
 
   def self.process_photos(photos, params = {})
