@@ -16,6 +16,7 @@ require_relative 'app/jobs/google_fetch_and_associate_job'
 require_relative 'app/jobs/yelp_fetch_and_associate_job'
 
 require_relative 'app/models/facebook_page'
+require_relative 'app/models/facebook_photo'
 
 require_relative 'app/models/google_places_review'
 require_relative 'app/models/google_places_spot'
@@ -23,6 +24,7 @@ require_relative 'app/models/google_places_photo'
 
 require_relative 'app/models/yelp_business'
 require_relative 'app/models/yelp_review'
+require_relative 'app/models/yelp_photo'
 
 require_relative 'app/models/responses/reviews_response'
 require_relative 'app/models/responses/photos_response'
@@ -88,8 +90,13 @@ module LocationFetchService
         facebook_photos_conditions = {facebook_id: @page.facebook_id}
         @facebook_photos = FacebookPhoto.find_all(settings.app_db, facebook_photos_conditions)
       end
+      
+      unless @yelp_business.nil?
+        yelp_photo_conditions = {yelp_id: @yelp_business.yelp_id}
+        @yelp_photos = YelpPhoto.find_all(settings.app_db, yelp_photo_conditions)
+      end
 
-      photos = {google: @google_photos, facebook: @facebook_photos}
+      photos = {google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
       count = params[:count]
       Responses::PhotosResponse.respond(photos, count: count)
     end
