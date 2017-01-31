@@ -308,11 +308,17 @@ class Address
     normalized_country = COUNTRY_LOOKUP[@address_components[:country]] || @address_components[:country]
     
     normalized_postal_code = if @address_components[:postal_code]
-      @address_components[:postal_code].gsub(/\s+/, '').upcase if @address_components[:postal_code]
+      @address_components[:postal_code].gsub(/\s+/, '').upcase
     end
 
     normalized_street = if @address_components[:street]
-      @address_components[:street].upcase.gsub(/[^\w\s]/, '').gsub(/\b(\w+)\b/) { |match| ABBREV_LOOKUP[match] || match }.capitalize
+      remove_special_chars = @address_components[:street]
+        .upcase
+        .gsub(/[^\w\s]/, '')
+
+
+      with_replacements = remove_special_chars.gsub(/\b(\w+)\b/) { |match| ABBREV_LOOKUP[match] || match }.capitalize if remove_special_chars
+      with_replacements
     end
 
     components = @address_components.merge({

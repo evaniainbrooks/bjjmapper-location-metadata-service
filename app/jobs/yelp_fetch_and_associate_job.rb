@@ -3,6 +3,7 @@ require 'mongo'
 require_relative '../../config'
 require_relative '../models/yelp_business'
 require_relative '../models/yelp_review'
+require_relative '../models/yelp_photo'
 require_relative '../../lib/yelp_fusion_client'
 
 module YelpFetchAndAssociateJob
@@ -13,8 +14,22 @@ module YelpFetchAndAssociateJob
   def self.perform(model)
     bjjmapper_location_id = model['bjjmapper_location_id']
     listing = @client.business(URI::encode(model['yelp_id']))
-    detailed_listing = build_listing(listing, bjjmapper_location_id)
     
+    if listing['error']
+      puts "Got error response #{listing['error'].inspect}, exiting"
+      return 0
+    end
+
+    detailed_listing = build_listing(listing, bjjmapper_location_id)
+   
+    if listing['photos']
+      puts "Storing photos #{listing['photos'].inspect}"
+      listing['photos'].each do |url| 
+        params = { location_id: bjjmapper_location_id, yelp_id: listing['id'] }
+        YelpPhoto.from_response(url, params).upsert(@connection, params.merge(url: url))
+      end
+    end
+
     reviews_response = @client.reviews(URI::encode(listing['id']))
     puts "reviews response is #{reviews_response.inspect}"
     reviews_response['reviews'].each do |review_response|
@@ -22,9 +37,9 @@ module YelpFetchAndAssociateJob
       puts "Storing review #{review.inspect}"
       review.upsert(@connection, yelp_id: detailed_listing.yelp_id, time_created: review.time_created, user_name: review.user_name)
     end if reviews_response && reviews_response['reviews']
-    
+
     puts "Storing listing #{detailed_listing.inspect}"
-    detailed_listing.save(@connection)
+    detailed_listing.upsert(@connection, yelp_id: detailed_listing.yelp_id)
   end
 
   def self.build_listing(listing_response, location_id)

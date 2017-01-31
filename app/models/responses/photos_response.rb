@@ -19,7 +19,9 @@ module Responses
         by_width.last.as_json.merge(small_url: by_width.first.source)
       end
 
-      [google, facebook].compact.flatten.take(count.to_i).to_json
+      yelp = photos[:yelp].collect {|o| o.as_json.merge(small_url: o.url) }
+
+      [yelp, google, facebook].compact.flatten.take(count.to_i).to_json
     end
   end
 end

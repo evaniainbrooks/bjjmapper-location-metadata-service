@@ -17,12 +17,21 @@ module GoogleFetchAndAssociateJob
   def self.perform(model)
     bjjmapper_location_id = model['bjjmapper_location_id']
     listing = @places_client.spot(model['place_id'])
+    
     detailed_listing = build_listing(listing, bjjmapper_location_id)
+    
     listing.reviews.each do |review_response|
       review = build_review(review_response, bjjmapper_location_id, listing.id)
       puts "Storing review #{review.inspect}"
       review.upsert(@connection, place_id: detailed_listing.place_id, author_name: review.author_name, time: review.time)
     end
+    
+    listing.photos.each do |photo_response|
+      photo = build_photo(photo_response, bjjmapper_location_id, detailed_listing.place_id)
+      puts "Storing photo #{photo.inspect}"
+      photo.upsert(@connection, place_id: detailed_listing.place_id, photo_reference: photo.photo_reference)
+    end
+    
     puts "Storing listing #{detailed_listing.inspect}"
     detailed_listing.upsert(@connection, place_id: detailed_listing.place_id)
   end
