@@ -11,6 +11,7 @@ require './app/jobs/google_identify_candidate_locations_job'
 require './app/jobs/yelp_identify_candidate_locations_job'
 require './app/jobs/google_fetch_and_associate_job'
 require './app/jobs/yelp_fetch_and_associate_job'
+require './app/jobs/random_location_refresh_job'
 
 module LocationFetchService
   class LocationsQueueWorker < Resque::Worker

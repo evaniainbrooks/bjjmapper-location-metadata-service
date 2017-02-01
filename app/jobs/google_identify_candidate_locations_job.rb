@@ -69,17 +69,21 @@ module GoogleIdentifyCandidateLocationsJob
 
   def self.create_pending_location_from_listing!(listing)
     puts "Creating candidate location #{listing.name}"
+    
+    o = listing.as_json
+    puts o.inspect
     response = @bjjmapper.create_pending_location({
-      title: listing.name,
-      coordinates: [listing.lng, listing.lat],
-      street: listing.street,
-      postal_code: listing.postal_code,
-      city: listing.city,
-      state: listing.region,
-      country: listing.country,
+      title: o[:title],
+      coordinates: [o[:lng], o[:lat]],
+      street: o[:street], 
+      postal_code: o[:postal_code],
+      city: o[:city],
+      state: o[:state],
+      country: o[:country],
       source: 'Google',
-      website: listing.website,
-      phone: listing.international_phone_number || listing.formatted_phone_number
+      phone: o[:phone],
+      website: o[:website],
+      flag_closed: o[:is_closed]
     })
 
     puts "Created #{response['id']} location"

@@ -12,7 +12,7 @@ class GooglePlacesSpot
       :opening_hours, :utc_offset, :place_id, :created_at].freeze
 
   COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, 
-                       :types, :id, :formatted_phone_number, :international_phone_number, 
+                       :types, :id, :formatted_phone_number, :international_phone_number, :permanently_closed, 
                        :address_components, :street_number, :street, :city, :region, :postal_code,
                        :country, :rating, :url, :cid, :website, :aspects, :zagat_selected, :zagat_reviewed, 
                        :review_summary, :nextpagetoken, :price_level, :opening_hours, :events, :utc_offset, 
@@ -53,7 +53,8 @@ class GooglePlacesSpot
       source: 'Google', 
       title: self.name, 
       url: url, 
-      google_id: self.place_id
+      google_id: self.place_id,
+      is_closed: self.permanently_closed
     )
   end
 end

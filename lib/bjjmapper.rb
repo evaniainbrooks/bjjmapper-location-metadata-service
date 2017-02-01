@@ -55,6 +55,14 @@ class BJJMapper
       nil
     end
   end
+  
+  def random_location(params = {})
+    query = params.merge(:api_key => API_KEY, :count => 100, :rejected => 0, :closed => 0, :unverified => 0)
+    query = URI.encode_www_form(query)
+    uri = URI("http://#{@host}:#{@port}/api/locations/random.json?#{query}")
+
+    get_request(uri)
+  end
 
   def map_search(params)
     query = params.merge(:api_key => API_KEY, :count => 100, :rejected => 1, :closed => 1, :unverified => 1)

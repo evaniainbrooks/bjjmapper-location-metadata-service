@@ -31,7 +31,7 @@ class YelpBusiness
   end
 
   def address_components
-    format_street = address.present? ? address.join(' ') : [address1, address2, address3].compact.join(' ')
+    format_street = !address.nil? ? address.join(' ') : [address1, address2, address3].compact.join(' ')
     {
       street: format_street,
       city: city, 

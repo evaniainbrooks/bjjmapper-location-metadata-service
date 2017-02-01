@@ -17,7 +17,7 @@ module YelpIdentifyCandidateLocationsJob
   TOTAL_LIMIT = 200
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
-  FILTER_WORDS = ['capoeira', 'karate', 'taekwondo', 'cultural', 'aikido'].freeze
+  FILTER_WORDS = ['capoeira', 'karate', 'kwondo', 'cultural', 'aikido'].freeze
   DEFAULT_DISTANCE_METERS = 40000
   DISTANCE_THRESHOLD_MI = 0.4
 
@@ -29,7 +29,7 @@ module YelpIdentifyCandidateLocationsJob
         listing = build_listing(listing, batch_id)
         puts "Found business #{listing.name}, #{listing.inspect}"
        
-        if should_filter?(listing.name)
+        if should_filter?(listing.name.downcase)
           puts "Filtering #{listing.name} because of title"
           next
         end

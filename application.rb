@@ -15,6 +15,8 @@ require_relative 'app/jobs/yelp_identify_candidate_locations_job'
 require_relative 'app/jobs/google_fetch_and_associate_job'
 require_relative 'app/jobs/yelp_fetch_and_associate_job'
 
+require_relative 'app/jobs/random_location_refresh_job'
+
 require_relative 'app/models/facebook_page'
 require_relative 'app/models/facebook_photo'
 
@@ -155,6 +157,7 @@ module LocationFetchService
           new_page.save(settings.app_db)
         else
           puts "New associated listing does not exist, fetching"
+          # FIXME: This doesn't exist
           Resque.enqueue(FacebookFetchAndAssociateJob, {
             bjjmapper_location_id: location_id,
             facebook_id: params[:facebook_id]
@@ -245,6 +248,14 @@ module LocationFetchService
         Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
         Resque.enqueue(FacebookSearchJob, @location) if scope.nil? || (scope == 'facebook')
       end
+      status 202
+    end
+
+    post '/search/random' do
+      scope = params[:scope]
+      count = params[:count]
+
+      Resque.enqueue(RandomLocationRefreshJob, count: count, scope: scope)
       status 202
     end
   end
