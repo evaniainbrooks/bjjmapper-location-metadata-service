@@ -14,10 +14,10 @@ module YelpIdentifyCandidateLocationsJob
   @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
 
   PAGE_LIMIT = 20
+  PAGE_WAIT_SECONDS = 2
   TOTAL_LIMIT = 200
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
-  FILTER_WORDS = ['capoeira', 'karate', 'kwondo', 'cultural', 'aikido'].freeze
   DEFAULT_DISTANCE_METERS = 40000
   DISTANCE_THRESHOLD_MI = 0.4
 
@@ -25,8 +25,8 @@ module YelpIdentifyCandidateLocationsJob
     batch_id = Time.now
     puts "Searching Yelp for listings"
     find_academy_listings(model) do |block|
-      block.each do |listing|
-        listing = build_listing(listing, batch_id)
+      block.each do |listing_response|
+        listing = YelpBusiness.from_response(listing_response, batch_id: batch_id, primary: true)
         puts "Found business #{listing.name}, #{listing.inspect}"
        
         if should_filter?(listing.name.downcase)
@@ -45,7 +45,7 @@ module YelpIdentifyCandidateLocationsJob
 
   def self.should_filter?(name)
     name_components = name.split.collect(&:downcase).to_set
-    filtered_word = FILTER_WORDS.detect {|word| name_components.include?(word) }
+    filtered_word = TITLE_FILTER_WORDS.detect {|word| name_components.include?(word) }
     return !filtered_word.nil?
   end
 
@@ -110,11 +110,7 @@ module YelpIdentifyCandidateLocationsJob
 
       break if response['businesses'].count < PAGE_LIMIT || businesses_count >= TOTAL_LIMIT
     
-      sleep(2)
+      sleep(PAGE_WAIT_SECONDS)
     end
-  end
-
-  def self.build_listing(listing_response, batch_id)
-    return YelpBusiness.from_response(listing_response, batch_id: batch_id, primary: true)
   end
 end

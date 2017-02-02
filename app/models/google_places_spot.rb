@@ -23,7 +23,7 @@ class GooglePlacesSpot
   def self.from_response(response, params = {})
     GooglePlacesSpot.new(response).tap do |o|
       o.created_at = Time.now
-      o.place_id = response.id
+      o.place_id = response.place_id
       o.primary = params[:primary]
       o.bjjmapper_location_id = params[:location_id]
       o.batch_id = params[:batch_id]

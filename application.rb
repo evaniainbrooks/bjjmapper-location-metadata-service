@@ -239,15 +239,48 @@ module LocationFetchService
     #
     post '/search/async' do
       scope = params[:scope]
+      location_id = @location['id']
 
-      if @location['id'].nil?
+      if location_id.nil?
         Resque.enqueue(GoogleIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'google')
         Resque.enqueue(YelpIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'yelp')
-      else
-        Resque.enqueue(GooglePlacesSearchJob, @location) if scope.nil? || (scope == 'google')
-        Resque.enqueue(YelpSearchJob, @location) if scope.nil? || (scope == 'yelp')
-        Resque.enqueue(FacebookSearchJob, @location) if scope.nil? || (scope == 'facebook')
+        
+        status 202
+        return
       end
+
+      if scope.nil? || scope == 'google'
+        conditions = {place_id: params[:google_id]}
+        listing = GooglePlacesSpot.find(settings.app_db, conditions)
+        if !listing.nil?
+          puts "Found google listing, refreshing"
+          Resque.enqueue(GoogleFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            place_id: listing.place_id
+          })
+        else
+          puts "No google listing, searching"
+          Resque.enqueue(GooglePlacesSearchJob, @location)
+        end
+      end
+
+      if scope.nil? || scope == 'yelp'
+        conditions = {yelp_id: params[:yelp_id]}
+        listing = YelpBusiness.find(settings.app_db, conditions)
+        if !listing.nil?
+          puts "Found yelp listing, refreshing"
+          Resque.enqueue(YelpFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            yelp_id: listing.yelp_id
+          })
+        else
+          puts "No yelp listing, searching"
+          Resque.enqueue(YelpSearchJob, @location)
+        end
+      end
+
+      # There is no FetchAndAssociate for Facebook (yet)
+      Resque.enqueue(FacebookSearchJob, @location) if scope.nil? || (scope == 'facebook')
       status 202
     end
 

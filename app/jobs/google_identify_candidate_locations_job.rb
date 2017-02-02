@@ -18,17 +18,16 @@ module GoogleIdentifyCandidateLocationsJob
 
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = ['gym', 'health']
-  FILTER_WORDS = ['capoeira', 'karate', 'taekwondo', 'cultural', 'aikido'].freeze
   DEFAULT_DISTANCE_MI = 25
   DISTANCE_THRESHOLD_MI = 0.4
 
   def self.perform(model)
     batch_id = Time.now
     puts "Searching Google for listings"
-    find_academy_listings(model).each do |listing|
-      listing = build_listing(listing, batch_id)
+    find_academy_listings(model).each do |listing_response|
+      listing = GooglePlacesSpot.from_response(listing_response, batch_id: batch_id) 
       puts "Found business #{listing.name}, #{listing.inspect}"
-      if should_filter?(listing.name)
+      if should_filter?(listing.name.downcase)
         puts "Filtering #{listing.name} because of title"
         next
       end
@@ -43,7 +42,7 @@ module GoogleIdentifyCandidateLocationsJob
   
   def self.should_filter?(name)
     name_components = name.split.collect(&:downcase).to_set
-    filtered_word = FILTER_WORDS.detect {|word| name_components.include?(word) }
+    filtered_word = TITLE_FILTER_WORDS.detect {|word| name_components.include?(word) }
     return !filtered_word.nil?
   end
   
@@ -60,7 +59,7 @@ module GoogleIdentifyCandidateLocationsJob
   end
 
   def self.enqueue_associate_listing_job(listing, location)
-    puts "Associating #{listing.place_id} with #{location['title']}"
+    puts "Associating #{listing} with #{location['title']}"
     Resque.enqueue(GoogleFetchAndAssociateJob, {
       bjjmapper_location_id: location['id'],
       place_id: listing.place_id

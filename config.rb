@@ -17,5 +17,7 @@ module LocationFetchService
 
   APP_API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"
 
+  TITLE_FILTER_WORDS = ['capoeira', 'karate', 'tae', 'kwondo', 'cultural', 'aikido'].freeze
+
   Koala.config.api_version = "v2.8"
 end
