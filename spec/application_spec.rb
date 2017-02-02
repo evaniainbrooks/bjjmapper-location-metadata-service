@@ -21,24 +21,42 @@ describe 'LocationFetchService' do
     end
     context 'with location.id parameter' do
       let(:request) { { location: { id: 123, lat: 80.0, lng: 80.0 }  }.to_json }
-      context 'without scope parameter' do
-        before do
-          Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
-          Resque.should_receive(:enqueue).with(YelpSearchJob, anything)
-          Resque.should_receive(:enqueue).with(FacebookSearchJob, anything)
-        end
-        it 'enqueues search jobs and returns 202' do
-          post "/search/async?api_key=#{api_key}", request, content_type
+      context 'when a listing exists' do
+        let(:spot) { double(place_id: 'abc') }
+        before { GooglePlacesSpot.stub(:find).and_return(spot) }
+        it 'enqueues a refresh job for the listing' do
+          Resque.should_receive(:enqueue).with(GoogleFetchAndAssociateJob, hash_including(place_id: spot.place_id, bjjmapper_location_id: 123))
+
+          post "/search/async?api_key=#{api_key}&scope=google", request, content_type
           last_response.status.should eq 202
         end
       end
-      context 'with scope parameter' do
+      
+      context 'when no listings exist' do
         before do
-          Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
+          GooglePlacesSpot.stub(:find).and_return(nil)
+          YelpBusiness.stub(:find).and_return(nil)
+          FacebookPage.stub(:find).and_return(nil)
         end
-        it 'enqueues search job for the scope and returns 202' do
-          post "/search/async?api_key=#{api_key}&scope=google", request, content_type
-          last_response.status.should eq 202
+        context 'without scope parameter' do
+          before do
+            Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
+            Resque.should_receive(:enqueue).with(YelpSearchJob, anything)
+            Resque.should_receive(:enqueue).with(FacebookSearchJob, anything)
+          end
+          it 'enqueues search jobs and returns 202' do
+            post "/search/async?api_key=#{api_key}", request, content_type
+            last_response.status.should eq 202
+          end
+        end
+        context 'with scope parameter' do
+          before do
+            Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
+          end
+          it 'enqueues search job for the scope and returns 202' do
+            post "/search/async?api_key=#{api_key}&scope=google", request, content_type
+            last_response.status.should eq 202
+          end
         end
       end
     end

@@ -27,7 +27,7 @@ describe GoogleIdentifyCandidateLocationsJob do
     let(:listing_lat) { 47.0 }
     let(:listing_lng) { -122.0 }
     let(:model) { {'title' => 'meow', 'lat' => lat, 'lng' => lng } }
-    let(:google_business) { double(id: 'google1234', lat: listing_lat, lng: listing_lng, name: 'google business') }
+    let(:google_business) { double(place_id: 'google1234', id: 'google1234', lat: listing_lat, lng: listing_lng, name: 'google business') }
     let(:google_response) { [google_business] }
     
     it 'searches google for listings' do

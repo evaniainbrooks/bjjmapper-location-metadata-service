@@ -42,7 +42,7 @@ module GoogleIdentifyCandidateLocationsJob
   
   def self.should_filter?(name)
     name_components = name.split.collect(&:downcase).to_set
-    filtered_word = TITLE_FILTER_WORDS.detect {|word| name_components.include?(word) }
+    filtered_word = LocationFetchService::TITLE_FILTER_WORDS.detect {|word| name_components.include?(word) }
     return !filtered_word.nil?
   end
   
