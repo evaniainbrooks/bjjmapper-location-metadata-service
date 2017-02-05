@@ -249,8 +249,8 @@ module LocationFetchService
         return
       end
 
+      conditions = {bjjmapper_location_id: location_id, primary: true}
       if scope.nil? || scope == 'google'
-        conditions = {place_id: params[:google_id]}
         listing = GooglePlacesSpot.find(settings.app_db, conditions)
         if !listing.nil?
           puts "Found google listing #{listing.inspect}, refreshing"
@@ -265,13 +265,12 @@ module LocationFetchService
       end
 
       if scope.nil? || scope == 'yelp'
-        conditions = {yelp_id: params[:yelp_id]}
         listing = YelpBusiness.find(settings.app_db, conditions)
         if !listing.nil?
           puts "Found yelp listing #{listing.inspect}, refreshing"
           Resque.enqueue(YelpFetchAndAssociateJob, {
             bjjmapper_location_id: location_id,
-            yelp_id: listing.yelp_id
+            yelp_id: listing.yelp_id 
           })
         else
           puts "No yelp listing, searching"
