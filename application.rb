@@ -253,7 +253,7 @@ module LocationFetchService
         conditions = {place_id: params[:google_id]}
         listing = GooglePlacesSpot.find(settings.app_db, conditions)
         if !listing.nil?
-          puts "Found google listing, refreshing"
+          puts "Found google listing #{listing.inspect}, refreshing"
           Resque.enqueue(GoogleFetchAndAssociateJob, {
             bjjmapper_location_id: location_id,
             place_id: listing.place_id
@@ -268,7 +268,7 @@ module LocationFetchService
         conditions = {yelp_id: params[:yelp_id]}
         listing = YelpBusiness.find(settings.app_db, conditions)
         if !listing.nil?
-          puts "Found yelp listing, refreshing"
+          puts "Found yelp listing #{listing.inspect}, refreshing"
           Resque.enqueue(YelpFetchAndAssociateJob, {
             bjjmapper_location_id: location_id,
             yelp_id: listing.yelp_id
