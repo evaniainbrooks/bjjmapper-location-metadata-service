@@ -13,9 +13,7 @@ module Responses
       review_models.keys.inject([]) do |arr, src|
         reviews = review_models[src].map{|o|o.as_json} unless review_models[src].nil?
         arr.concat(reviews || [])
-      end
-        .uniq{|o| o[:key]}
-        .uniq{|o| [o[:author_name], o[:text]]}
+      end.uniq{|o| [o[:key], o[:author_name], o[:text]]}
     end
 
     def self.calculate_total_rating(spot_models, review_models)
