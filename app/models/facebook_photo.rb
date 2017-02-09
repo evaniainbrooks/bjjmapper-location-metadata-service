@@ -14,7 +14,7 @@ class FacebookPhoto
       o.created_at = Time.now
       o.source ||= photo_response['url']
       o.facebook_id = params[:facebook_id]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
       o.photo_id = params[:photo_id] || nil
       o.album_id = params[:album_id] || nil
       o.is_cover_photo = params[:is_cover_photo] || false

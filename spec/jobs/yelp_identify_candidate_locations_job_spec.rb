@@ -38,7 +38,7 @@ describe YelpIdentifyCandidateLocationsJob do
     it 'searches bjj mapper for nearby locations' do
       stub_yelp_search(yelp_response)
       stub_bjjmapper_search
-      bjjmapper.stub(:create_pending_location).and_return(model)
+      bjjmapper.stub(:create_location).and_return(model)
 
       YelpIdentifyCandidateLocationsJob.perform(model)
     end
@@ -62,16 +62,16 @@ describe YelpIdentifyCandidateLocationsJob do
           stub_bjjmapper_search
           stub_yelp_search(yelp_response)
         end
-        it 'creates a pending location' do
-          bjjmapper.should_receive(:create_pending_location)
+        it 'creates a location' do
+          bjjmapper.should_receive(:create_location)
             .with(hash_including(title: yelp_business['name']))
             .and_return(location_response)
 
           YelpIdentifyCandidateLocationsJob.perform(model)
         end
         it 'persists the listing with the newly created location' do
-          bjjmapper.stub(:create_pending_location).and_return(location_response)
-          YelpBusiness.any_instance.should_receive(:upsert).with(anything, yelp_id: yelp_business['id'])
+          bjjmapper.stub(:create_location).and_return(location_response)
+          YelpBusiness.any_instance.should_receive(:upsert).with(anything, bjjmapper_location_id: location_response['id'], yelp_id: yelp_business['id'])
 
           YelpIdentifyCandidateLocationsJob.perform(model)
         end

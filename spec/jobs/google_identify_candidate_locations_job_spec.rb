@@ -39,7 +39,7 @@ describe GoogleIdentifyCandidateLocationsJob do
     it 'searches bjj mapper for nearby locations' do
       stub_google_search(google_response)
       stub_bjjmapper_search
-      bjjmapper.stub(:create_pending_location).and_return(model)
+      bjjmapper.stub(:create_location).and_return(model)
 
       GoogleIdentifyCandidateLocationsJob.perform(model)
     end
@@ -59,22 +59,34 @@ describe GoogleIdentifyCandidateLocationsJob do
       end
       context 'when there are no nearby bjjmapper locations' do
         let(:location_response) { { 'title' => 'somelocation', 'id' => 'new_locid', 'lat' => lat, 'lng' => lng } }
-        before do
-          stub_bjjmapper_search
-          stub_google_search(google_response)
-        end
-        it 'creates a pending location' do
-          bjjmapper.should_receive(:create_pending_location)
-            .with(hash_including(title: google_business.name))
-            .and_return(location_response)
+        before { stub_bjjmapper_search }
+        context 'when the title contains a whitelist word' do
+        let(:whitelist_google_business) { double(place_id: 'google1234', id: 'google1234', lat: listing_lat, lng: listing_lng, name: LocationFetchService::TITLE_WHITELIST_WORDS.first + ' business') }
+        let(:whitelist_google_response) { [whitelist_google_business] }
+          before { stub_google_search(whitelist_google_response) }
+          it 'creates a verified location' do
+            bjjmapper.should_receive(:create_location)
+              .with(hash_including(title: whitelist_google_business.name, pending: false))
+              .and_return(location_response)
 
-          GoogleIdentifyCandidateLocationsJob.perform(model)
+            GoogleIdentifyCandidateLocationsJob.perform(model)
+          end
         end
-        it 'persists the listing with the newly created location' do
-          bjjmapper.stub(:create_pending_location).and_return(location_response)
-          GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything, place_id: google_business.id)
+        context 'when the title does not contain a whitelist word' do
+          before { stub_google_search(google_response) }
+          it 'creates a pending location' do
+            bjjmapper.should_receive(:create_location)
+              .with(hash_including(title: google_business.name, pending: true))
+              .and_return(location_response)
 
-          GoogleIdentifyCandidateLocationsJob.perform(model)
+            GoogleIdentifyCandidateLocationsJob.perform(model)
+          end
+          it 'persists the listing with the newly created location' do
+            bjjmapper.stub(:create_location).and_return(location_response)
+            GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything, bjjmapper_location_id: location_response['id'], place_id: google_business.id)
+
+            GoogleIdentifyCandidateLocationsJob.perform(model)
+          end
         end
       end
     end

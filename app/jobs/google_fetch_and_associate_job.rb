@@ -33,18 +33,18 @@ module GoogleFetchAndAssociateJob
     end
     
     puts "Storing listing #{detailed_listing.inspect}"
-    detailed_listing.upsert(@connection, place_id: detailed_listing.place_id)
+    detailed_listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: detailed_listing.place_id)
   end
 
   def self.build_photo(response, location_id, place_id)
-    GooglePlacesPhoto.from_response(response, location_id: location_id, place_id: place_id, url: response.fetch_url(LARGE_IMAGE_WIDTH))
+    GooglePlacesPhoto.from_response(response, bjjmapper_location_id: location_id, place_id: place_id, url: response.fetch_url(LARGE_IMAGE_WIDTH))
   end
 
   def self.build_listing(response, location_id)
-    GooglePlacesSpot.from_response(response, location_id: location_id, primary: true)
+    GooglePlacesSpot.from_response(response, bjjmapper_location_id: location_id, primary: true)
   end
 
   def self.build_review(response, location_id, place_id)
-    GooglePlacesReview.from_response(response, location_id: location_id, place_id: place_id)
+    GooglePlacesReview.from_response(response, bjjmapper_location_id: location_id, place_id: place_id)
   end
 end

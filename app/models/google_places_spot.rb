@@ -25,7 +25,7 @@ class GooglePlacesSpot
       o.place_id = response.place_id
       o.created_at = Time.now
       o.primary = params[:primary]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
       o.batch_id = params[:batch_id]
     end
   end

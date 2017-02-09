@@ -51,10 +51,10 @@ module YelpSearchJob
   end
 
   def self.build_listing(listing_response, location_id, batch_id)
-    return YelpBusiness.from_response(listing_response, location_id: location_id, batch_id: batch_id)
+    return YelpBusiness.from_response(listing_response, bjjmapper_location_id: location_id, batch_id: batch_id)
   end
 
   def self.build_review(review_response, location_id, yelp_id)
-    return YelpReview.from_response(review_response, location_id: location_id, yelp_id: yelp_id)
+    return YelpReview.from_response(review_response, bjjmapper_location_id: location_id, yelp_id: yelp_id)
   end
 end

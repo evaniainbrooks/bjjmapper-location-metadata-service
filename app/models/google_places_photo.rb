@@ -14,7 +14,7 @@ class GooglePlacesPhoto
       o.created_at = Time.now
       o.url = params[:url]
       o.place_id = params[:place_id]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
     end
   end
 

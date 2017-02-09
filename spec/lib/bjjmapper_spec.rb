@@ -18,20 +18,20 @@ describe BJJMapper do
       end
     end
   end
-  describe '.create_pending_location' do
+  describe '.create_location' do
     let(:request) { { title: 'blah' } }
     context 'with success response' do
       let(:location_response) { { id: '1234', title: 'Hello Kitty', city: 'Halifax', country: 'Canada' }.to_json }
       let(:response) { double('http_response', code: 200, body: location_response) }
       before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Post)).and_return(response) }
       it 'fetches the response from the service' do
-        subject.create_pending_location(request).should eq JSON.parse(location_response)
+        subject.create_location(request).should eq JSON.parse(location_response)
       end
     end
     context 'when the service is down' do
       before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Post)).and_raise(StandardError, 'service is down') }
       it 'returns nil' do
-        subject.create_pending_location(request).should be_nil 
+        subject.create_location(request).should be_nil 
       end
     end
   end

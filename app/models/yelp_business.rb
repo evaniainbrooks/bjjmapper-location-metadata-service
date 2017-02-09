@@ -20,7 +20,7 @@ class YelpBusiness
     YelpBusiness.new(response).tap do |o|
       o.created_at = Time.now
       o.primary = params[:primary]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
       o.yelp_id = response['id']
       o.merge_attributes!(response['location'])
       if response['coordinates']

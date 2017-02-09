@@ -38,10 +38,10 @@ module FacebookSearchJob
       facebook_id = listing['id']
       FacebookPage.from_response(listing, {
         facebook_id: facebook_id, 
-        location_id: bjjmapper_location_id, 
+        bjjmapper_location_id: bjjmapper_location_id, 
         batch_id: batch_id,
         primary: true
-      }).upsert(@connection, facebook_id: facebook_id)
+      }).upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, facebook_id: facebook_id)
 
       puts "Storing profile photo"
       if (listing['picture'])
@@ -50,7 +50,7 @@ module FacebookSearchJob
         
         FacebookPhoto.from_response(picture_response, {
           facebook_id: facebook_id, 
-          location_id: bjjmapper_location_id, 
+          bjjmapper_location_id: bjjmapper_location_id, 
           is_profile_photo: true
         }).upsert(@connection, {
           is_profile_photo: true, 
@@ -65,7 +65,7 @@ module FacebookSearchJob
         
         FacebookPhoto.from_response(picture_response, { 
           facebook_id: facebook_id, 
-          location_id: bjjmapper_location_id, 
+          bjjmapper_location_id: bjjmapper_location_id, 
           is_cover_photo: true
         }).tap do |photo|
           photo.offset_x = picture_response['offset_x']
@@ -77,7 +77,7 @@ module FacebookSearchJob
       puts "Storing photos"
       process_photos(listing['photos']['data'] || [], {
         facebook_id: facebook_id, 
-        location_id: bjjmapper_location_id
+        bjjmapper_location_id: bjjmapper_location_id
       }) if listing['photos']
 
       puts "Storing album photos"
@@ -86,7 +86,7 @@ module FacebookSearchJob
         puts "Processing album #{album_id}"
         process_photos(album['photos']['data'] || [], {
           facebook_id: facebook_id, 
-          location_id: bjjmapper_location_id, 
+          bjjmapper_location_id: bjjmapper_location_id, 
           album_id: album_id
         }) if album['photos']
       end if listing['albums']
@@ -126,11 +126,33 @@ module FacebookSearchJob
     })
 
     puts "Search returned #{response.count} listings"
-    response.select do |result|
-      !result['is_unclaimed']
-    end.tap do |filtered_response|
-      puts "After filtering there are #{filtered_response.count} listings"
+    listings = filter_listings(response) 
+
+    if listings.empty?
+      puts "Couldn't find anything using (lat, lng), trying global search"
+      listings = client.search(title, { 
+        fields: REQUEST_FIELDS.join(','),
+        type: 'page'
+      })
     end
+
+    listings = filter_listings(response)
+    listings
+  end
+
+  def self.filter_listings(listings)
+    # Prefer claimed listings over unclaimed listings
+    claimed, unclaimed = listings.partition do |result|
+      !result['is_unclaimed']
+    end
+      
+    puts "After filtering there are #{claimed.count} listings"
+    if claimed.empty? && !unclaimed.empty?
+      puts "No unfiltered listings remain, using filtered listings"
+      claimed = unclaimed
+    end
+
+    claimed
   end
 
   def self.process_photos(photos, params = {})

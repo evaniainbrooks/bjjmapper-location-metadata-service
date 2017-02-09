@@ -62,6 +62,8 @@ module LocationFetchService
     # Locations before (set location)
     #
     before '/locations/:bjjmapper_location_id/*' do
+      pass if 'listings' == request.path_info.split('/')[2]
+      
       id = params[:bjjmapper_location_id]
       conditions = {primary: true, bjjmapper_location_id: id}
 
@@ -72,6 +74,7 @@ module LocationFetchService
 
     before '/locations/*' do
       pass if 'associate' == request.path_info.split('/')[2]
+      pass if 'listings' == request.path_info.splice('/')[2]
 
       if @spot.nil? && @yelp_business.nil? && @page.nil?
         puts "No listings found"
@@ -118,6 +121,18 @@ module LocationFetchService
         {google: @spot, yelp: @yelp_business},
         {google: @google_reviews, yelp: @yelp_reviews}
       )
+    end
+
+    get '/locations/:bjjmapper_location_id/listings' do
+      conditions = { bjjmapper_location_id: params[:bjjmapper_location_id] }
+      @yelp_listings = YelpBusiness.find_all(settings.app_db, conditions)
+      @google_listings = GooglePlacesSpot.find_all(settings.app_db, conditions)
+      @facebook_listings = FacebookPage.find_all(settings.app_db, conditions)
+
+      context = { combined: false }
+      [].concat(@yelp_listings).concat(@google_listings).concat(@facebook_listings).flatten.compact.map do |listing|
+        Responses::DetailResponse.respond(context, listing: listing)
+      end.to_json
     end
 
     get '/locations/:bjjmapper_location_id/detail' do

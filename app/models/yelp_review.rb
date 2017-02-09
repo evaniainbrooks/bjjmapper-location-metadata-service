@@ -10,7 +10,7 @@ class YelpReview
 
   def self.from_response(response, params = {})
     return YelpReview.new(response).tap do |r|
-      r.bjjmapper_location_id = params[:location_id]
+      r.bjjmapper_location_id = params[:bjjmapper_location_id]
       r.yelp_id = params[:yelp_id]
       r.user_id = response['user']['id']
       r.user_image_url = response['user']['image_url']

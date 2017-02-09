@@ -17,7 +17,8 @@ module LocationFetchService
 
   APP_API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"
 
-  TITLE_FILTER_WORDS = ['capoeira', 'karate', 'tae', 'kwondo', 'cultural', 'aikido'].freeze
+  TITLE_BLACKLIST_WORDS = ['wingchun', 'chun', 'kung', 'kung-fu', 'kungfu', 'capoeira', 'karate', 'tae', 'kwondo', 'tae-kwondo', 'taekwondo', 'kwon', 'krav', 'maga', 'cultural', 'aikido', 'ai-kido', 'kido'].freeze
+  TITLE_WHITELIST_WORDS = ['brazilian', 'jiu-jitsu', 'jitsu', 'mma', 'judo', 'gracie', 'bjj', 'submission', 'grappling'].freeze
 
   Koala.config.api_version = "v2.8"
 end

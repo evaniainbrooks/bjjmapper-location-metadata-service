@@ -25,7 +25,7 @@ module YelpFetchAndAssociateJob
     if listing['photos']
       puts "Storing photos #{listing['photos'].inspect}"
       listing['photos'].each do |url| 
-        params = { location_id: bjjmapper_location_id, yelp_id: listing['id'] }
+        params = { bjjmapper_location_id: bjjmapper_location_id, yelp_id: listing['id'] }
         YelpPhoto.from_response(url, params).upsert(@connection, params.merge(url: url))
       end
     end
@@ -39,14 +39,14 @@ module YelpFetchAndAssociateJob
     end if reviews_response && reviews_response['reviews']
 
     puts "Storing listing #{detailed_listing.inspect}"
-    detailed_listing.upsert(@connection, yelp_id: detailed_listing.yelp_id)
+    detailed_listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, yelp_id: detailed_listing.yelp_id)
   end
 
   def self.build_listing(listing_response, location_id)
-    YelpBusiness.from_response(listing_response, location_id: location_id, primary: true)
+    YelpBusiness.from_response(listing_response, bjjmapper_location_id: location_id, primary: true)
   end
   
   def self.build_review(review_response, location_id, yelp_id)
-    YelpReview.from_response(review_response, location_id: location_id, yelp_id: yelp_id)
+    YelpReview.from_response(review_response, bjjmapper_location_id: location_id, yelp_id: yelp_id)
   end
 end

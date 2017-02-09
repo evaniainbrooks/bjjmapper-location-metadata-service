@@ -11,7 +11,7 @@ class YelpPhoto
     return YelpPhoto.new(url: photo).tap do |o|
       o.created_at = Time.now
       o.yelp_id = params[:yelp_id]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
     end
   end
 

@@ -36,14 +36,20 @@ module GoogleIdentifyCandidateLocationsJob
       puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
       listing.bjjmapper_location_id = create_or_associate_nearest_location(listing, bjjmapper_nearby_locations) 
-      listing.upsert(@connection, place_id: listing.place_id)
+      listing.upsert(@connection, bjjmapper_location_id: listing.bjjmapper_location_id, place_id: listing.place_id)
     end
   end
   
   def self.should_filter?(name)
     name_components = name.split.collect(&:downcase).to_set
-    filtered_word = LocationFetchService::TITLE_FILTER_WORDS.detect {|word| name_components.include?(word) }
+    filtered_word = LocationFetchService::TITLE_BLACKLIST_WORDS.detect {|word| name_components.include?(word) }
     return !filtered_word.nil?
+  end
+
+  def self.should_whitelist?(name)
+    name_components = name.split.collect(&:downcase).to_set
+    whitelist_word = LocationFetchService::TITLE_WHITELIST_WORDS.detect {|word| name_components.include?(word) }
+    return !whitelist_word.nil?
   end
   
   def self.create_or_associate_nearest_location(listing, nearby_locations)
@@ -52,7 +58,7 @@ module GoogleIdentifyCandidateLocationsJob
       enqueue_associate_listing_job(listing, nearest)
       nearest['id']
     else
-      new_loc = create_pending_location_from_listing!(listing)
+      new_loc = create_location_from_listing!(listing)
       enqueue_associate_listing_job(listing, new_loc)
       new_loc['id']
     end
@@ -66,12 +72,12 @@ module GoogleIdentifyCandidateLocationsJob
     })
   end
 
-  def self.create_pending_location_from_listing!(listing)
+  def self.create_location_from_listing!(listing)
     puts "Creating candidate location #{listing.name}"
     
     o = listing.as_json
     puts o.inspect
-    response = @bjjmapper.create_pending_location({
+    response = @bjjmapper.create_location({
       title: o[:title],
       coordinates: [o[:lng], o[:lat]],
       street: o[:street], 
@@ -82,7 +88,8 @@ module GoogleIdentifyCandidateLocationsJob
       source: 'Google',
       phone: o[:phone],
       website: o[:website],
-      flag_closed: o[:is_closed]
+      flag_closed: o[:is_closed],
+      pending: !should_whitelist?(o[:title])
     })
 
     puts "Created #{response['id']} location"

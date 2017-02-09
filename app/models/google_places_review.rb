@@ -10,7 +10,7 @@ class GooglePlacesReview
   def self.from_response(response, params = {})
     return GooglePlacesReview.new(response).tap do |o|
       o.place_id = params[:place_id]
-      o.bjjmapper_location_id = params[:location_id]
+      o.bjjmapper_location_id = params[:bjjmapper_location_id]
     end
   end
 

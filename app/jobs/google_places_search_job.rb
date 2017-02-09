@@ -42,7 +42,7 @@ module GooglePlacesSearchJob
       puts "Storing secondary spot #{spot.place_id}"
       build_spot(spot, bjjmapper_location_id, batch_id).tap do |spot|
         spot.primary = false
-        spot.upsert(@connection, place_id: spot.place_id)
+        spot.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: spot.place_id)
       end
     end
   end
@@ -74,6 +74,6 @@ module GooglePlacesSearchJob
   end
 
   def self.build_spot(response, location_id, batch_id)
-    GooglePlacesSpot.from_response(response, location_id: location_id, batch_id: batch_id)
+    GooglePlacesSpot.from_response(response, bjjmapper_location_id: location_id, batch_id: batch_id)
   end
 end

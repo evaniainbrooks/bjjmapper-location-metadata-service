@@ -31,7 +31,7 @@ describe YelpSearchJob do
       let(:yelp_reviews) { { 'reviews' => [] } }
 
       before do
-          yelp.stub(:search).and_return(yelp_response)
+        yelp.stub(:search).and_return(yelp_response)
       end
       
       it 'enqueues an associate job for the first/best listing' do
@@ -56,7 +56,7 @@ describe YelpSearchJob do
           .with(expected_id)
           .and_return(yelp_business)
 
-        YelpBusiness.any_instance.should_receive(:upsert).with(anything, yelp_id: expected_id)
+        YelpBusiness.any_instance.should_receive(:upsert).with(anything, hash_including(yelp_id: expected_id))
 
         YelpSearchJob.perform(model)
       end

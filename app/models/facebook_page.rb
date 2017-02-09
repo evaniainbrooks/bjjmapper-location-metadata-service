@@ -22,7 +22,7 @@ class FacebookPage
         r.lat = listing_response['location']['latitude']
         r.lng = listing_response['location']['longitude']
       end
-      r.bjjmapper_location_id = params[:location_id]
+      r.bjjmapper_location_id = params[:bjjmapper_location_id]
       r.batch_id = params[:batch_id]
       r.primary = params[:primary] || false
     end
