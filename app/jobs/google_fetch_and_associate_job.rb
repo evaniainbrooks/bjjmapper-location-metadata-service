@@ -9,7 +9,7 @@ require_relative '../models/google_places_photo'
 module GoogleFetchAndAssociateJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
+  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
   
   LARGE_IMAGE_WIDTH = 500
   IMAGE_WIDTH = 100

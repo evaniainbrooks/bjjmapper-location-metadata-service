@@ -11,7 +11,7 @@ module YelpIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapper.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
+  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
 
   PAGE_LIMIT = 20
   PAGE_WAIT_SECONDS = 2

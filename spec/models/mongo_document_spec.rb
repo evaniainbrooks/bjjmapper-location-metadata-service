@@ -17,7 +17,7 @@ describe MongoDocument do
   end
   describe '#find' do
     let(:conditions) { { test_field: 123 } }
-    before { mongo.should_receive(:find_one).with(conditions) }
+    before { mongo.should_receive(:find).with(conditions).and_return(double(first: nil)) }
     it 'calls find_one on the interface' do
       test_class.find(connection, conditions)
     end
@@ -46,7 +46,7 @@ describe MongoDocument do
   describe '.save' do
     context 'when the _id field is set' do
       let(:subject) { test_class.new(test_field: 'meow', _id: 123) }
-      before { mongo.should_receive(:update).with({'_id' => 123}, {'$set' => {'test_field' => 'meow'}}) }
+      before { mongo.should_receive(:update_one).with({'_id' => 123}, {'$set' => {'test_field' => 'meow'}}) }
       it 'calls update on the interface' do
         subject.save(connection)
       end
@@ -62,7 +62,7 @@ describe MongoDocument do
   describe '.upsert' do
     let(:conditions) { { '_id' => 123  } } 
     let(:subject) { test_class.new(test_field: 'meow') }
-    before { mongo.should_receive(:update).with(conditions, {'test_field' => 'meow'}, {upsert: true}) }
+    before { mongo.should_receive(:update_one).with(conditions, {'test_field' => 'meow'}, {upsert: true}) }
     it 'calls update(upsert: true) on the interface' do
       subject.upsert(connection, conditions)
     end

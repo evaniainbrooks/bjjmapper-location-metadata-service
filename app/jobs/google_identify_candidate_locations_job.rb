@@ -14,7 +14,7 @@ module GoogleIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapper.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
+  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
 
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = ['gym', 'health']

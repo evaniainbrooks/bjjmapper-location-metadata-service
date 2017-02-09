@@ -9,7 +9,7 @@ require_relative './google_fetch_and_associate_job'
 module YelpSearchJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::MongoClient.new(LocationFetchService::DATABASE_HOST, LocationFetchService::DATABASE_PORT).db(LocationFetchService::DATABASE_APP_DB)
+  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
 
   def self.perform(model)
     bjjmapper_location_id = model['id']

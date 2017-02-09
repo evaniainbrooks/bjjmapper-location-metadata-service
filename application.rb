@@ -45,9 +45,8 @@ module LocationFetchService
 
       set :app_database_name, DATABASE_APP_DB
 
-      connection = MongoClient.new(DATABASE_HOST, DATABASE_PORT)
-      set :mongo_connection, connection
-      set :app_db, connection.db(settings.app_database_name)
+      connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+      set :app_db, connection
 
       Resque.redis = ::Redis.new(host: DATABASE_HOST, password: ENV['REDIS_PASS'])
     end

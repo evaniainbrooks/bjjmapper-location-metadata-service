@@ -5,14 +5,14 @@ module MongoDocument
 
   module ClassMethods
     def find(connection, conditions)
-      model_attrs = connection[self.const_get(:COLLECTION_NAME)].find_one(conditions)
+      model_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions).first
       
       return nil if model_attrs.nil?
       return self.new(model_attrs)
     end
 
     def upsert(connection, conditions, attributes)
-      connection[self.const_get(:COLLECTION_NAME)].update(conditions, {'$set' => attributes}, {:upsert => true})
+      connection[self.const_get(:COLLECTION_NAME)].update_one(conditions, {'$set' => attributes}, {:upsert => true})
     end
 
     def find_all(connection, conditions)
@@ -57,13 +57,13 @@ module MongoDocument
   end
     
   def upsert(connection, conditions)
-    connection[self.class.const_get(:COLLECTION_NAME)].update(conditions, create_params, {:upsert => true})
+    connection[self.class.const_get(:COLLECTION_NAME)].update_one(conditions, create_params, {:upsert => true})
   end
 
   private
   
   def update(connection, update_params)
-    connection[self.class.const_get(:COLLECTION_NAME)].update({'_id' => self._id}, {'$set' => update_params})
+    connection[self.class.const_get(:COLLECTION_NAME)].update_one({'_id' => self._id}, {'$set' => update_params})
   end
 
   def insert(connection)
