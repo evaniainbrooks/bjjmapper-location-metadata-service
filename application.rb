@@ -74,7 +74,7 @@ module LocationFetchService
 
     before '/locations/*' do
       pass if 'associate' == request.path_info.split('/')[2]
-      pass if 'listings' == request.path_info.splice('/')[2]
+      pass if 'listings' == request.path_info.split('/')[2]
 
       if @spot.nil? && @yelp_business.nil? && @page.nil?
         puts "No listings found"
