@@ -66,7 +66,7 @@ describe GoogleIdentifyCandidateLocationsJob do
           before { stub_google_search(whitelist_google_response) }
           it 'creates a verified location' do
             bjjmapper.should_receive(:create_location)
-              .with(hash_including(title: whitelist_google_business.name, pending: false))
+              .with(hash_including(title: whitelist_google_business.name, status: BJJMapper::LOCATION_STATUS_VERIFIED))
               .and_return(location_response)
 
             GoogleIdentifyCandidateLocationsJob.perform(model)
@@ -76,7 +76,7 @@ describe GoogleIdentifyCandidateLocationsJob do
           before { stub_google_search(google_response) }
           it 'creates a pending location' do
             bjjmapper.should_receive(:create_location)
-              .with(hash_including(title: google_business.name, pending: true))
+              .with(hash_including(title: google_business.name, status: BJJMapper::LOCATION_STATUS_PENDING))
               .and_return(location_response)
 
             GoogleIdentifyCandidateLocationsJob.perform(model)

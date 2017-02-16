@@ -51,7 +51,7 @@ module YelpIdentifyCandidateLocationsJob
   end
   
   def self.should_whitelist?(name)
-    name_components = name.split.collect(&:downcase).to_set
+    name_components = name.downcase.split.collect(&:downcase).to_set
     whitelist_word = LocationFetchService::TITLE_WHITELIST_WORDS.detect {|word| name_components.include?(word) }
     return !whitelist_word.nil?
   end
@@ -91,7 +91,7 @@ module YelpIdentifyCandidateLocationsJob
       source: 'Yelp',
       phone: o[:phone],
       flag_closed: o[:is_closed],
-      pending: !should_whitelist?(o[:title])
+      status: should_whitelist?(o[:title]) ? BJJMapper::LOCATION_STATUS_VERIFIED : BJJMapper::LOCATION_STATUS_PENDING
     })
 
     puts "Created #{response['id']} location"

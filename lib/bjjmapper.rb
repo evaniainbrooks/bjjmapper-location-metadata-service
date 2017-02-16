@@ -33,16 +33,16 @@ class BJJMapper
     end
   end
   
-  STATUS_PENDING = 1
-  STATUS_VERIFIED = 2
-  STATUS_REJECTED = 3
+  LOCATION_STATUS_PENDING = 1
+  LOCATION_STATUS_VERIFIED = 2
+  LOCATION_STATUS_REJECTED = 3
   def create_location(location_data)
     query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.body = {location: location_data.merge(status: location_data.fetch(:pending, true) ? STATUS_PENDING : STATUS_VERIFIED) }.to_json
+    request.body = {location: location_data}.to_json
     request.content_type = 'application/json'
 
     begin
