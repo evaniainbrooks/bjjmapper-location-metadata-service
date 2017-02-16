@@ -10,11 +10,19 @@ class YelpBusiness
     :address, :display_address, :city, :website,
     :zip_code, :state, :state_code, 
     :postal_code, :country_code, :country,
-    :cross_streets, :neighborhoods, :lat, :lng,
+    :cross_streets, :neighborhoods, :coordinates,
     :address1, :address2, :address3, :_id, :bjjmapper_location_id, 
     :batch_id, :primary, :created_at].freeze
 
   attr_accessor *COLLECTION_FIELDS
+  
+  def lat
+    coordinates.nil? ? nil : coordinates[1]
+  end
+
+  def lng
+    coordinates.nil? ? nil : coordinates[0]
+  end
 
   def self.from_response(response, params = {})
     YelpBusiness.new(response).tap do |o|
@@ -24,8 +32,9 @@ class YelpBusiness
       o.yelp_id = response['id']
       o.merge_attributes!(response['location'])
       if response['coordinates']
-        o.lat = response['coordinates']['latitude']
-        o.lng = response['coordinates']['longitude']
+        lat = response['coordinates']['latitude']
+        lng = response['coordinates']['longitude']
+        o.coordinates = [lng, lat]
       end
     end
   end
@@ -40,13 +49,22 @@ class YelpBusiness
       postal_code: zip_code || postal_code
     }
   end
+  
+  def lat
+    coordinates.nil? ? nil : coordinates[1]
+  end
+
+  def lng
+    coordinates.nil? ? nil : coordinates[0]
+  end
 
   def as_json
     {
       source: 'Yelp', 
       url: "http://yelp.com/biz/#{yelp_id}",
       yelp_id: yelp_id,
-      lat: lat, lng: lng, 
+      lat: lat,
+      lng: lng, 
       title: name, 
       image_url: image_url,
       icon: snippet_image_url,

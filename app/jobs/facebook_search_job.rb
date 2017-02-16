@@ -7,7 +7,7 @@ require_relative '../models/facebook_photo'
 
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
   @redis = ::Redis.new(host: LocationFetchService::DATABASE_HOST, password: ENV['REDIS_PASS'])
 
   PICTURE_WIDTH = 1000
@@ -25,6 +25,8 @@ module FacebookSearchJob
   def self.perform(model)
     client = Koala::Facebook::API.new(oauth_token)
     bjjmapper_location_id = model['id']
+    lat = model['lat']
+    lng = model['lng']
     batch_id = Time.now
 
     listings = find_best_listings(client, model)
@@ -50,6 +52,8 @@ module FacebookSearchJob
         
         FacebookPhoto.from_response(picture_response, {
           facebook_id: facebook_id, 
+          lat: lat, 
+          lng: lng,
           bjjmapper_location_id: bjjmapper_location_id, 
           is_profile_photo: true
         }).upsert(@connection, {
@@ -65,6 +69,8 @@ module FacebookSearchJob
         
         FacebookPhoto.from_response(picture_response, { 
           facebook_id: facebook_id, 
+          lat: lat,
+          lng: lng,
           bjjmapper_location_id: bjjmapper_location_id, 
           is_cover_photo: true
         }).tap do |photo|
@@ -77,6 +83,8 @@ module FacebookSearchJob
       puts "Storing photos"
       process_photos(listing['photos']['data'] || [], {
         facebook_id: facebook_id, 
+        lat: lat, 
+        lng: lng,
         bjjmapper_location_id: bjjmapper_location_id
       }) if listing['photos']
 
@@ -86,6 +94,8 @@ module FacebookSearchJob
         puts "Processing album #{album_id}"
         process_photos(album['photos']['data'] || [], {
           facebook_id: facebook_id, 
+          lat: lat, 
+          lng: lng,
           bjjmapper_location_id: bjjmapper_location_id, 
           album_id: album_id
         }) if album['photos']

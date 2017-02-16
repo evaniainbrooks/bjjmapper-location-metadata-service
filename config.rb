@@ -4,6 +4,7 @@ module LocationFetchService
   DATABASE_HOST = ENV['RACK_ENV'] == 'production' ? 'services.bjjmapper.com' : 'localhost'
   DATABASE_PORT = 27017
   DATABASE_APP_DB = 'location_fetch_service' 
+  DATABASE_URI = "mongodb://#{DATABASE_HOST}:#{DATABASE_PORT}/#{DATABASE_APP_DB}"
 
   QUEUE_NAME = "locations"
 

@@ -9,7 +9,7 @@ require_relative './google_fetch_and_associate_job'
 module GooglePlacesSearchJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
 
   DISTANCE_THRESHOLD_MI = 0.4 # miles
   LARGE_IMAGE_WIDTH = 500

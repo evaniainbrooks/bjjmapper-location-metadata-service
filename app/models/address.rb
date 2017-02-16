@@ -327,8 +327,6 @@ class Address
       postal_code: normalized_postal_code
     })
 
-    puts "components: #{@address_components.inspect} normalized: #{components.inspect}"
-
     return Address.new(components)
   end
 

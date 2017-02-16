@@ -2,14 +2,13 @@ require 'resque'
 require 'mongo'
 require_relative '../../config'
 require_relative '../models/yelp_business'
-require_relative '../models/yelp_review'
 require_relative '../../lib/yelp_fusion_client'
 require_relative './google_fetch_and_associate_job'
 
 module YelpSearchJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
 
   def self.perform(model)
     bjjmapper_location_id = model['id']
@@ -52,9 +51,5 @@ module YelpSearchJob
 
   def self.build_listing(listing_response, location_id, batch_id)
     return YelpBusiness.from_response(listing_response, bjjmapper_location_id: location_id, batch_id: batch_id)
-  end
-
-  def self.build_review(review_response, location_id, yelp_id)
-    return YelpReview.from_response(review_response, bjjmapper_location_id: location_id, yelp_id: yelp_id)
   end
 end

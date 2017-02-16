@@ -14,7 +14,7 @@ module GoogleIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapper.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
 
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = ['gym', 'health']
@@ -105,9 +105,5 @@ module GoogleIdentifyCandidateLocationsJob
     puts "Got response #{spots.count} spots for #{lat}, #{lng}  (using type: gym, health)"
 
     spots
-  end
-
-  def self.build_listing(response, batch_id)
-    GooglePlacesSpot.from_response(response, batch_id: batch_id, primary: true)
   end
 end

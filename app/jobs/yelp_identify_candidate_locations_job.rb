@@ -11,7 +11,7 @@ module YelpIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapper.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
 
   PAGE_LIMIT = 20
   PAGE_WAIT_SECONDS = 2
@@ -19,7 +19,7 @@ module YelpIdentifyCandidateLocationsJob
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
   DEFAULT_DISTANCE_METERS = 40000
-  DISTANCE_THRESHOLD_MI = 0.4
+  DISTANCE_THRESHOLD_MI = 1.0
 
   def self.perform(model)
     batch_id = Time.now
@@ -34,7 +34,8 @@ module YelpIdentifyCandidateLocationsJob
           next
         end
 
-        bjjmapper_nearby_locations = @bjjmapper.map_search({sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng})
+        params = {sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng}
+        bjjmapper_nearby_locations = @bjjmapper.map_search(params)
         puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
         listing.bjjmapper_location_id = create_or_associate_nearest_location(listing, bjjmapper_nearby_locations) 

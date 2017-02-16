@@ -4,14 +4,14 @@ class GooglePlacesSpot
   include MongoDocument
   COLLECTION_NAME = 'google_places_spots'
   SLICE_ATTRIBUTES = [
-      :lat, :lng, :name, :icon, 
+      :name, :icon, 
       :vicinity, :formatted_phone_number, 
       :international_phone_number, 
       :street, :city, :region, :postal_code, :country, 
       :rating, :url, :website, :review_summary, :price_level, 
       :opening_hours, :utc_offset, :place_id, :created_at].freeze
 
-  COLLECTION_FIELDS = [:lat, :lng, :viewport, :name, :icon, :reference, :vicinity, 
+  COLLECTION_FIELDS = [:coordinates, :viewport, :name, :icon, :reference, :vicinity, 
                        :types, :id, :formatted_phone_number, :international_phone_number, :permanently_closed, 
                        :address_components, :street_number, :street, :city, :region, :postal_code,
                        :country, :rating, :url, :cid, :website, :aspects, :zagat_selected, :zagat_reviewed, 
@@ -24,6 +24,7 @@ class GooglePlacesSpot
     GooglePlacesSpot.new(response).tap do |o|
       o.place_id = response.place_id
       o.created_at = Time.now
+      o.coordinates = [response.lng, response.lat]
       o.primary = params[:primary]
       o.bjjmapper_location_id = params[:bjjmapper_location_id]
       o.batch_id = params[:batch_id]
@@ -42,6 +43,14 @@ class GooglePlacesSpot
       postal_code: postal_code
     }
   end
+  
+  def lat
+    coordinates.nil? ? nil : coordinates[1]
+  end
+
+  def lng
+    coordinates.nil? ? nil : coordinates[0]
+  end
 
   def as_json
     attrs = SLICE_ATTRIBUTES.inject({}) do |hash, k|
@@ -53,6 +62,8 @@ class GooglePlacesSpot
       source: 'Google', 
       title: self.name, 
       url: url, 
+      lat: lat,
+      lng: lng,
       google_id: self.place_id,
       is_closed: self.permanently_closed
     )

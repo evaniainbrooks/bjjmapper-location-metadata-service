@@ -15,36 +15,42 @@ module GoogleFetchAndAssociateJob
   IMAGE_WIDTH = 100
 
   def self.perform(model)
-    bjjmapper_location_id = model['bjjmapper_location_id']
     listing = @places_client.spot(model['place_id'])
-    
-    detailed_listing = build_listing(listing, bjjmapper_location_id)
+    bjjmapper_location_id = model['bjjmapper_location_id']
+    detailed_listing = GooglePlacesSpot.from_response(listing, 
+      bjjmapper_location_id: bjjmapper_location_id, 
+      primary: true
+    )
+
+    lat = detailed_listing.lat
+    lng = detailed_listing.lng
     
     listing.reviews.each do |review_response|
-      review = build_review(review_response, bjjmapper_location_id, listing.id)
+      review = GooglePlacesReview.from_response(review_response, 
+        bjjmapper_location_id: bjjmapper_location_id, 
+        lat: lat,
+        lng: lng,
+        place_id: detailed_listing.place_id
+      )
+
       puts "Storing review #{review.inspect}"
       review.upsert(@connection, place_id: detailed_listing.place_id, author_name: review.author_name, time: review.time)
     end
     
     listing.photos.each do |photo_response|
-      photo = build_photo(photo_response, bjjmapper_location_id, detailed_listing.place_id)
+      photo = GooglePlacesPhoto.from_response(photo_response, 
+        bjjmapper_location_id: bjjmapper_location_id, 
+        lat: lat,
+        lng: lng,
+        place_id: detailed_listing.place_id, 
+        url: photo_response.fetch_url(LARGE_IMAGE_WIDTH)
+      )
+
       puts "Storing photo #{photo.inspect}"
       photo.upsert(@connection, place_id: detailed_listing.place_id, photo_reference: photo.photo_reference)
     end
     
     puts "Storing listing #{detailed_listing.inspect}"
     detailed_listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: detailed_listing.place_id)
-  end
-
-  def self.build_photo(response, location_id, place_id)
-    GooglePlacesPhoto.from_response(response, bjjmapper_location_id: location_id, place_id: place_id, url: response.fetch_url(LARGE_IMAGE_WIDTH))
-  end
-
-  def self.build_listing(response, location_id)
-    GooglePlacesSpot.from_response(response, bjjmapper_location_id: location_id, primary: true)
-  end
-
-  def self.build_review(response, location_id, place_id)
-    GooglePlacesReview.from_response(response, bjjmapper_location_id: location_id, place_id: place_id)
   end
 end
