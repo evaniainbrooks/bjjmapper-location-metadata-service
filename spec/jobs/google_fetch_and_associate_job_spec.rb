@@ -34,7 +34,7 @@ describe GoogleFetchAndAssociateJob do
 
     it 'persists the google listing' do
       google.stub(:spot).and_return(google_business)
-      GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything,
+      GoogleSpot.any_instance.should_receive(:upsert).with(anything,
         hash_including(bjjmapper_location_id: loc_id, place_id: google_id))
 
       described_class.perform(model)

@@ -1,6 +1,6 @@
 require_relative 'mongo_document'
 
-class GooglePlacesSpot
+class GoogleSpot
   include MongoDocument
   COLLECTION_NAME = 'google_places_spots'
   SLICE_ATTRIBUTES = [
@@ -21,7 +21,7 @@ class GooglePlacesSpot
   attr_accessor *COLLECTION_FIELDS
 
   def self.from_response(response, params = {})
-    GooglePlacesSpot.new(response).tap do |o|
+    GoogleSpot.new(response).tap do |o|
       o.place_id = response.place_id
       o.created_at = Time.now
       o.coordinates = [response.lng, response.lat]

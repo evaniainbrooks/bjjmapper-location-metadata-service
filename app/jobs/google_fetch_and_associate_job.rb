@@ -2,9 +2,9 @@ require 'resque'
 require 'mongo'
 require 'google_places'
 require_relative '../../config'
-require_relative '../models/google_places_spot'
-require_relative '../models/google_places_review'
-require_relative '../models/google_places_photo'
+require_relative '../models/google_spot'
+require_relative '../models/google_review'
+require_relative '../models/google_photo'
 
 module GoogleFetchAndAssociateJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
@@ -17,7 +17,7 @@ module GoogleFetchAndAssociateJob
   def self.perform(model)
     listing = @places_client.spot(model['place_id'])
     bjjmapper_location_id = model['bjjmapper_location_id']
-    detailed_listing = GooglePlacesSpot.from_response(listing, 
+    detailed_listing = GoogleSpot.from_response(listing, 
       bjjmapper_location_id: bjjmapper_location_id, 
       primary: true
     )
@@ -26,7 +26,7 @@ module GoogleFetchAndAssociateJob
     lng = detailed_listing.lng
     
     listing.reviews.each do |review_response|
-      review = GooglePlacesReview.from_response(review_response, 
+      review = GoogleReview.from_response(review_response, 
         bjjmapper_location_id: bjjmapper_location_id, 
         lat: lat,
         lng: lng,
@@ -38,7 +38,7 @@ module GoogleFetchAndAssociateJob
     end
     
     listing.photos.each do |photo_response|
-      photo = GooglePlacesPhoto.from_response(photo_response, 
+      photo = GooglePhoto.from_response(photo_response, 
         bjjmapper_location_id: bjjmapper_location_id, 
         lat: lat,
         lng: lng,

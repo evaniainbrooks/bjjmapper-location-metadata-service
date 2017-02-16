@@ -1,9 +1,9 @@
 require 'resque'
 require 'mongo'
 require 'google_places'
-require_relative '../models/google_places_spot'
-require_relative '../models/google_places_review'
-require_relative '../models/google_places_photo'
+require_relative '../models/google_spot'
+require_relative '../models/google_review'
+require_relative '../models/google_photo'
 require_relative '../../config'
 require_relative '../../lib/bjjmapper'
 require_relative '../../lib/circle_distance'
@@ -25,7 +25,7 @@ module GoogleIdentifyCandidateLocationsJob
     batch_id = Time.now
     puts "Searching Google for listings"
     find_academy_listings(model).each do |listing_response|
-      listing = GooglePlacesSpot.from_response(listing_response, batch_id: batch_id) 
+      listing = GoogleSpot.from_response(listing_response, batch_id: batch_id) 
       puts "Found business #{listing.name}, #{listing.inspect}"
       if should_filter?(listing.name.downcase)
         puts "Filtering #{listing.name} because of title"

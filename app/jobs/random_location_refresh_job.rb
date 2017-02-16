@@ -4,7 +4,7 @@ require 'koala'
 require_relative '../../config'
 require_relative '../../lib/bjjmapper'
 
-require_relative './google_places_search_job'
+require_relative './google_search_job'
 require_relative './yelp_search_job'
 require_relative './facebook_search_job'
 
@@ -29,7 +29,7 @@ module RandomLocationRefreshJob
       location_fields = { id: location['id'], lat: location['lat'], lng: location['lng'], title: location['title'] } 
       puts "Refreshing location #{location_fields.inspect}"
 
-      Resque.enqueue(GooglePlacesSearchJob, location_fields) if scope.nil? || scope == 'google'
+      Resque.enqueue(GoogleSearchJob, location_fields) if scope.nil? || scope == 'google'
       Resque.enqueue(FacebookSearchJob, location_fields) if scope.nil? || scope == 'facebook'
       Resque.enqueue(YelpSearchJob, location_fields) if scope.nil? || scope == 'yelp'
     end

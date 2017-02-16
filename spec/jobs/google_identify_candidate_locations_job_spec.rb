@@ -83,7 +83,7 @@ describe GoogleIdentifyCandidateLocationsJob do
           end
           it 'persists the listing with the newly created location' do
             bjjmapper.stub(:create_location).and_return(location_response)
-            GooglePlacesSpot.any_instance.should_receive(:upsert).with(anything, bjjmapper_location_id: location_response['id'], place_id: google_business.id)
+            GoogleSpot.any_instance.should_receive(:upsert).with(anything, bjjmapper_location_id: location_response['id'], place_id: google_business.id)
 
             GoogleIdentifyCandidateLocationsJob.perform(model)
           end

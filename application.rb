@@ -8,7 +8,7 @@ require 'redis'
 
 require_relative './config'
 require_relative 'app/jobs/facebook_search_job'
-require_relative 'app/jobs/google_places_search_job'
+require_relative 'app/jobs/google_search_job'
 require_relative 'app/jobs/yelp_search_job'
 require_relative 'app/jobs/google_identify_candidate_locations_job'
 require_relative 'app/jobs/yelp_identify_candidate_locations_job'
@@ -20,9 +20,9 @@ require_relative 'app/jobs/random_location_refresh_job'
 require_relative 'app/models/facebook_page'
 require_relative 'app/models/facebook_photo'
 
-require_relative 'app/models/google_places_review'
-require_relative 'app/models/google_places_spot'
-require_relative 'app/models/google_places_photo'
+require_relative 'app/models/google_review'
+require_relative 'app/models/google_spot'
+require_relative 'app/models/google_photo'
 
 require_relative 'app/models/yelp_business'
 require_relative 'app/models/yelp_review'
@@ -67,7 +67,7 @@ module LocationFetchService
       conditions = {primary: true, bjjmapper_location_id: id}
 
       @page = FacebookPage.find(settings.app_db, conditions)
-      @spot = GooglePlacesSpot.find(settings.app_db, conditions)
+      @spot = GoogleSpot.find(settings.app_db, conditions)
       @yelp_business = YelpBusiness.find(settings.app_db, conditions)
     end
 
@@ -87,7 +87,7 @@ module LocationFetchService
     get '/locations/:bjjmapper_location_id/photos' do
       unless @spot.nil?
         google_photos_conditions = {place_id: @spot.place_id}
-        @google_photos = GooglePlacesPhoto.find_all(settings.app_db, google_photos_conditions)
+        @google_photos = GooglePhoto.find_all(settings.app_db, google_photos_conditions)
       end
       
       unless @page.nil?
@@ -108,7 +108,7 @@ module LocationFetchService
     get '/locations/:bjjmapper_location_id/reviews' do
       unless @spot.nil?
         google_review_conditions = {place_id: @spot.place_id}
-        @google_reviews = GooglePlacesReview.find_all(settings.app_db, google_review_conditions)
+        @google_reviews = GoogleReview.find_all(settings.app_db, google_review_conditions)
       end
 
       unless @yelp_business.nil?
@@ -125,7 +125,7 @@ module LocationFetchService
     get '/locations/:bjjmapper_location_id/listings' do
       conditions = { bjjmapper_location_id: params[:bjjmapper_location_id] }
       @yelp_listings = YelpBusiness.find_all(settings.app_db, conditions)
-      @google_listings = GooglePlacesSpot.find_all(settings.app_db, conditions)
+      @google_listings = GoogleSpot.find_all(settings.app_db, conditions)
       @facebook_listings = FacebookPage.find_all(settings.app_db, conditions)
 
       context = { combined: false }
@@ -189,7 +189,7 @@ module LocationFetchService
         
         location_id = params[:bjjmapper_location_id]
         conditions = {place_id: params[:google_id]}
-        new_spot = GooglePlacesSpot.find(settings.app_db, conditions)
+        new_spot = GoogleSpot.find(settings.app_db, conditions)
         if !new_spot.nil?
           puts "New associated listing exists #{new_spot.place_id}"
           new_spot.bjjmapper_location_id = location_id
@@ -265,7 +265,7 @@ module LocationFetchService
 
       conditions = {bjjmapper_location_id: location_id, primary: true}
       if scope.nil? || scope == 'google'
-        listing = GooglePlacesSpot.find(settings.app_db, conditions)
+        listing = GoogleSpot.find(settings.app_db, conditions)
         if !listing.nil?
           puts "Found google listing #{listing.inspect}, refreshing"
           Resque.enqueue(GoogleFetchAndAssociateJob, {
@@ -274,7 +274,7 @@ module LocationFetchService
           })
         else
           puts "No google listing, searching"
-          Resque.enqueue(GooglePlacesSearchJob, @location)
+          Resque.enqueue(GoogleSearchJob, @location)
         end
       end
 

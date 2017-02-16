@@ -2,11 +2,11 @@ require 'resque'
 require 'mongo'
 require 'google_places'
 require_relative '../../config'
-require_relative '../models/google_places_spot'
+require_relative '../models/google_spot'
 require_relative '../../lib/circle_distance'
 require_relative './google_fetch_and_associate_job'
 
-module GooglePlacesSearchJob
+module GoogleSearchJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
@@ -74,6 +74,6 @@ module GooglePlacesSearchJob
   end
 
   def self.build_spot(response, location_id, batch_id)
-    GooglePlacesSpot.from_response(response, bjjmapper_location_id: location_id, batch_id: batch_id)
+    GoogleSpot.from_response(response, bjjmapper_location_id: location_id, batch_id: batch_id)
   end
 end

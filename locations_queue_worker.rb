@@ -4,7 +4,7 @@ Dotenv.load
 require 'resque'
 require 'redis'
 require './config'
-require './app/jobs/google_places_search_job'
+require './app/jobs/google_search_job'
 require './app/jobs/yelp_search_job'
 require './app/jobs/facebook_search_job'
 require './app/jobs/google_identify_candidate_locations_job'

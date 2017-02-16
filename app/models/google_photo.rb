@@ -1,6 +1,6 @@
 require_relative 'mongo_document'
 
-class GooglePlacesPhoto
+class GooglePhoto
   include MongoDocument
   COLLECTION_NAME = 'google_places_photos'
   COLLECTION_FIELDS = [:coordinates, :width, :height, :photo_reference, 
@@ -10,7 +10,7 @@ class GooglePlacesPhoto
   attr_accessor *COLLECTION_FIELDS
 
   def self.from_response(response, params = {})
-    return GooglePlacesPhoto.new(response).tap do |o|
+    return GooglePhoto.new(response).tap do |o|
       o.created_at = Time.now
       o.url = params[:url]
       o.coordinates = [params[:lng], params[:lat]]

@@ -23,7 +23,7 @@ describe 'LocationFetchService' do
       let(:request) { { location: { id: 123, lat: 80.0, lng: 80.0 }  }.to_json }
       context 'when a listing exists' do
         let(:spot) { double(place_id: 'abc') }
-        before { GooglePlacesSpot.stub(:find).and_return(spot) }
+        before { GoogleSpot.stub(:find).and_return(spot) }
         it 'enqueues a refresh job for the listing' do
           Resque.should_receive(:enqueue).with(GoogleFetchAndAssociateJob, hash_including(place_id: spot.place_id, bjjmapper_location_id: 123))
 
@@ -34,13 +34,13 @@ describe 'LocationFetchService' do
       
       context 'when no listings exist' do
         before do
-          GooglePlacesSpot.stub(:find).and_return(nil)
+          GoogleSpot.stub(:find).and_return(nil)
           YelpBusiness.stub(:find).and_return(nil)
           FacebookPage.stub(:find).and_return(nil)
         end
         context 'without scope parameter' do
           before do
-            Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
+            Resque.should_receive(:enqueue).with(GoogleSearchJob, anything)
             Resque.should_receive(:enqueue).with(YelpSearchJob, anything)
             Resque.should_receive(:enqueue).with(FacebookSearchJob, anything)
           end
@@ -51,7 +51,7 @@ describe 'LocationFetchService' do
         end
         context 'with scope parameter' do
           before do
-            Resque.should_receive(:enqueue).with(GooglePlacesSearchJob, anything)
+            Resque.should_receive(:enqueue).with(GoogleSearchJob, anything)
           end
           it 'enqueues search job for the scope and returns 202' do
             post "/search/async?api_key=#{api_key}&scope=google", request, content_type
