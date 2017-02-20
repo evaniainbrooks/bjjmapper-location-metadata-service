@@ -29,9 +29,9 @@ module Responses
       if context[:combined]
         (attributes || []).inject({}) do |hash, attrs|
           hash.merge(attrs.delete_if{|k,v| v.nil?})
-        end.merge(source: 'Multiple').to_json
+        end.merge(source: 'Multiple')
       else
-        attributes.to_json
+        attributes
       end
     end
 

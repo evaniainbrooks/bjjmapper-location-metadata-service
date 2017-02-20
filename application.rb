@@ -45,7 +45,7 @@ module LocationFetchService
 
       set :app_database_name, DATABASE_APP_DB
 
-      connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+      connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
       set :app_db, connection
 
       Resque.redis = ::Redis.new(host: DATABASE_HOST, password: ENV['REDIS_PASS'])
@@ -102,7 +102,7 @@ module LocationFetchService
 
       photos = {google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
       count = params[:count]
-      Responses::PhotosResponse.respond(photos, count: count)
+      Responses::PhotosResponse.respond(photos, count: count).to_json
     end
 
     get '/locations/:bjjmapper_location_id/reviews' do
@@ -119,14 +119,15 @@ module LocationFetchService
       return Responses::ReviewsResponse.respond(
         {google: @spot, yelp: @yelp_business},
         {google: @google_reviews, yelp: @yelp_reviews}
-      )
+      ).to_json
     end
 
     get '/locations/:bjjmapper_location_id/listings' do
       conditions = { bjjmapper_location_id: params[:bjjmapper_location_id] }
-      @yelp_listings = YelpBusiness.find_all(settings.app_db, conditions)
-      @google_listings = GoogleSpot.find_all(settings.app_db, conditions)
-      @facebook_listings = FacebookPage.find_all(settings.app_db, conditions)
+      scope = params[:scope]
+      @yelp_listings = YelpBusiness.find_all(settings.app_db, conditions) if scope.nil? || scope == 'yelp'
+      @google_listings = GoogleSpot.find_all(settings.app_db, conditions) if scope.nil? || scope == 'google'
+      @facebook_listings = FacebookPage.find_all(settings.app_db, conditions) if scope.nil? || scope == 'facebook'
 
       context = { combined: false }
       [].concat(@yelp_listings).concat(@google_listings).concat(@facebook_listings).flatten.compact.map do |listing|
@@ -148,8 +149,9 @@ module LocationFetchService
           postal_code: params[:postal_code]
         }
       }
-      return Responses::DetailResponse.respond(context,
-        {google: @spot, yelp: @yelp_business, facebook: @page})
+      
+      listings = {google: @spot, yelp: @yelp_business, facebook: @page}
+      return Responses::DetailResponse.respond(context, listings).to_json
     end
     
     post '/locations/:bjjmapper_location_id/associate' do

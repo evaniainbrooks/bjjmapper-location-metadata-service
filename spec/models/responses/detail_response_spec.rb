@@ -19,28 +19,28 @@ describe 'DetailResponse' do
       let(:result) { Responses::DetailResponse.respond({address: address}, listings) }
       
       it 'returns a json blob' do
-        JSON.parse(result).should_not be_nil
+        result.to_json.should_not be_nil
       end
 
       it 'returns the distance of the listing' do
-        JSON.parse(result)[0]['distance'].should < 0.0005
+        result[0][:distance].should < 0.0005
       end
 
       it 'returns the difference of the listing address' do
-        JSON.parse(result)[0]['address_match'].should eq 100.0
+        result[0][:address_match].should eq 100.0
       end
     end
     context 'with compare title' do
       let(:result) { Responses::DetailResponse.respond({title: title}, listings) }
       it 'returns the difference of the listing title' do
-        JSON.parse(result)[0]['title_match'].should eq 100.0
+        result[0][:title_match].should eq 100.0
       end
     end
     context 'without compare address' do
       let(:result) { Responses::DetailResponse.respond({}, listings) }
       
       it 'returns a json blob' do
-        JSON.parse(result).should_not be_nil
+        result.to_json.should_not be_nil
       end
     end
   end

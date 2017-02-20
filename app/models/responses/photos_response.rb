@@ -21,7 +21,7 @@ module Responses
 
       yelp = photos[:yelp].collect {|o| o.as_json.merge(small_url: o.url) }.uniq {|o| o[:url] } if photos[:yelp]
 
-      [yelp, google, facebook].compact.flatten.take(count.to_i).to_json
+      [yelp, google, facebook].compact.flatten.take(count.to_i)
     end
   end
 end

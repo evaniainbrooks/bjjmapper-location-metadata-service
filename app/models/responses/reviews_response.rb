@@ -6,7 +6,7 @@ module Responses
         rating: calculate_total_rating(listings, listing_reviews),
         count: reviews.count,
         reviews: reviews
-      }.to_json
+      }
     end
 
     def self.build_reviews_hash(review_models)

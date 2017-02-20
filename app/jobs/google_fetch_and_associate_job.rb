@@ -6,6 +6,8 @@ require_relative '../models/google_spot'
 require_relative '../models/google_review'
 require_relative '../models/google_photo'
 
+require_relative '../jobs/update_location_from_google_listing_job'
+
 module GoogleFetchAndAssociateJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
@@ -52,5 +54,7 @@ module GoogleFetchAndAssociateJob
     
     puts "Storing listing #{detailed_listing.inspect}"
     detailed_listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: detailed_listing.place_id)
+  
+    Resque.enqueue(UpdateLocationFromGoogleListingJob, bjjmapper_location_id: bjjmapper_location_id)
   end
 end

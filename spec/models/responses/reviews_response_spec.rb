@@ -18,15 +18,15 @@ describe 'ReviewsResponse' do
       let(:result) { Responses::ReviewsResponse.respond(listings, reviews) }
       
       it 'returns a json blob' do
-        JSON.parse(result).should_not be_nil
+        result.to_json.should_not be_nil
       end
 
       it 'calculates the rating total' do
-        JSON.parse(result)['rating'].should eq expected_rating
+        result[:rating].should eq expected_rating
       end
 
       it 'returns all of the reviews' do
-        JSON.parse(result)['reviews'].count.should eq 2
+        result[:reviews].count.should eq 2
       end
     end
   end

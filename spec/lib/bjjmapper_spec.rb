@@ -35,6 +35,23 @@ describe BJJMapper do
       end
     end
   end
+  describe '.update_location' do
+    let(:request) { { title: 'blah' } }
+    context 'with success response' do
+      let(:location_response) { { id: '1234', title: 'Hello Kitty', city: 'Halifax', country: 'Canada' }.to_json }
+      let(:response) { double('http_response', code: 200, body: location_response) }
+      before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Put)).and_return(response) }
+      it 'fetches the response from the service' do
+        subject.update_location('id', request).should eq JSON.parse(location_response)
+      end
+    end
+    context 'when the service is down' do
+      before { Net::HTTP.any_instance.should_receive(:request).with(instance_of(Net::HTTP::Put)).and_raise(StandardError, 'service is down') }
+      it 'returns nil' do
+        subject.update_location('id', request).should be_nil 
+      end
+    end
+  end
   describe '.map_search' do
     context 'with success response' do
       let(:expected_response) { { lat: 80.0, lng: 80.0, locations: [] }.to_json }
