@@ -4,6 +4,7 @@ describe GoogleFetchAndAssociateJob do
   describe '#perform' do
     let(:google) { double }
     before { described_class.instance_variable_set("@places_client", google) }
+    before { Resque.stub(:enqueue) }
 
     let(:lat) { 80.0 }
     let(:lng) { 80.0 }
@@ -36,6 +37,13 @@ describe GoogleFetchAndAssociateJob do
       google.stub(:spot).and_return(google_business)
       GoogleSpot.any_instance.should_receive(:upsert).with(anything,
         hash_including(bjjmapper_location_id: loc_id, place_id: google_id))
+
+      described_class.perform(model)
+    end
+      
+    it 'enqueues an update location job' do
+      google.stub(:spot).and_return(google_business)
+      Resque.should_receive(:enqueue).with(UpdateLocationFromGoogleListingJob, hash_including(bjjmapper_location_id: loc_id))
 
       described_class.perform(model)
     end
