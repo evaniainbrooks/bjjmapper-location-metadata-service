@@ -19,7 +19,6 @@ module GoogleIdentifyCandidateLocationsJob
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = ['gym', 'health']
   DEFAULT_DISTANCE_MI = 25
-  DISTANCE_THRESHOLD_MI = 0.4
 
   def self.perform(model)
     batch_id = Time.now
@@ -32,7 +31,7 @@ module GoogleIdentifyCandidateLocationsJob
         next
       end
 
-      bjjmapper_nearby_locations = @bjjmapper.map_search({sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng})
+      bjjmapper_nearby_locations = @bjjmapper.map_search({sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng})
       puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
       listing.bjjmapper_location_id = create_or_associate_nearest_location(listing, bjjmapper_nearby_locations) 

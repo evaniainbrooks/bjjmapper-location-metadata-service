@@ -21,5 +21,7 @@ module LocationFetchService
   TITLE_BLACKLIST_WORDS = ['wingchun', 'chun', 'kung', 'kung-fu', 'kungfu', 'capoeira', 'karate', 'tae', 'kwondo', 'tae-kwondo', 'taekwondo', 'kwon', 'krav', 'maga', 'cultural', 'aikido', 'ai-kido', 'kido'].freeze
   TITLE_WHITELIST_WORDS = ['brazilian', 'jiu-jitsu', 'jitsu', 'mma', 'judo', 'gracie', 'bjj', 'submission', 'grappling'].freeze
 
+  LISTING_DISTANCE_THRESHOLD_MI = 0.4
+
   Koala.config.api_version = "v2.8"
 end

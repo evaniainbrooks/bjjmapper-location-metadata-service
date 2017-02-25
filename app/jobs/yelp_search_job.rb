@@ -22,7 +22,6 @@ module YelpSearchJob
 
     listings.first.tap do |listing|
       puts "First listing is #{listing.inspect}"
-      
       Resque.enqueue(YelpFetchAndAssociateJob, {
         bjjmapper_location_id: bjjmapper_location_id,
         yelp_id: listing['id']
@@ -44,9 +43,27 @@ module YelpSearchJob
     title = model['title']
 
     response = @client.search({ latitude: lat, longitude: lng, term: title, categories: 'martialarts' })
-    puts "Search returned #{response['businesses'].count} listings"
+    listings = response['businesses']
+    puts "Search returned #{listings.count} listings"
 
-    response['businesses']
+    if listings.nil?
+      response = @client.search({ latitude: lat, longitude: lng, categories: 'martialarts' })
+      listings = response['businesses']
+      puts "Search returned #{listings.count} listings (using categories: martialarts)"
+    end
+
+    if !listings.nil?
+      listings = listings.sort_by do |listing|
+        distance = Math.circle_distance(lat, lng, listing['coordinates']['latitude'], listing['coordinates']['longitude'])
+        puts "Listing '#{listing['name']}' is #{distance} away from the location"
+        distance
+      end.select do |listing|
+        distance = Math.circle_distance(lat, lng, listing['coordinates']['latitude'], listing['coordinates']['longitude'])
+        distance < LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI
+      end
+    end
+
+    listings
   end
 
   def self.build_listing(listing_response, location_id, batch_id)

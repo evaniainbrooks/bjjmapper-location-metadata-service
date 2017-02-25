@@ -19,7 +19,6 @@ module YelpIdentifyCandidateLocationsJob
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = 'martialarts'
   DEFAULT_DISTANCE_METERS = 40000
-  DISTANCE_THRESHOLD_MI = 1.0
 
   def self.perform(model)
     batch_id = Time.now
@@ -34,7 +33,7 @@ module YelpIdentifyCandidateLocationsJob
           next
         end
 
-        params = {sort: 'distance', distance: DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng}
+        params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng}
         bjjmapper_nearby_locations = @bjjmapper.map_search(params)
         puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 

@@ -19,61 +19,60 @@ module GoogleSearchJob
     bjjmapper_location_id = model['id']
     batch_id = Time.now
 
-    spots = find_best_spots(model)
-    if spots.nil? || spots.count == 0
+    listings = find_best_listings(model)
+    if listings.nil? || listings.count == 0
       puts "Couldn't find anything"
       return
     end
 
-    spots.first.tap do |spot|
-      puts "Fetching detailed information for #{spot.place_id} #{spot.inspect}"
-      distance = Math.circle_distance(spot.lat, spot.lng, model['lat'], model['lng'])
-      if distance >= DISTANCE_THRESHOLD_MI
-        puts "*** WARNING: Spot is #{distance} away from location, ignoring!"
-      end
-      
+    listings.first.tap do |listing|
       Resque.enqueue(GoogleFetchAndAssociateJob, {
-        place_id: spot.place_id,
+        place_id: listing.place_id,
         bjjmapper_location_id: bjjmapper_location_id
       })
     end
 
-    spots.drop(1).each do |spot|
-      puts "Storing secondary spot #{spot.place_id}"
-      build_spot(spot, bjjmapper_location_id, batch_id).tap do |spot|
-        spot.primary = false
-        spot.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: spot.place_id)
+    listings.drop(1).each do |listing|
+      puts "Storing secondary listing #{listing.place_id}"
+      build_listing(listing, bjjmapper_location_id, batch_id).tap do |listing|
+        listing.primary = false
+        listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: listing.place_id)
       end
     end
   end
 
   private
 
-  def self.find_best_spots(model)
+  def self.find_best_listings(model)
     lat = model['lat']
     lng = model['lng']
     title = model['title']
     bjjmapper_location_id = model['id']
 
-    puts "Searching for spots"
-    spots = @places_client.spots(lat, lng, name: title, radius: 5000)
-    puts "Got response #{spots.count} spots for location #{bjjmapper_location_id} (using title)"
-    if spots.nil?
-      spots = @places_client.spots(lat, lng, types: ['gym', 'health'])
-      puts "Got response #{spots.count} spots for location #{bjjmapper_location_id} (using type: gym, health)"
-      if spots.count > 1
-        puts "WARNING: Found more than one (#{spots.count}) spot, choosing closest"
-        spots.sort_by! do |spot|
-          distance = Math.circle_distance(lat, lng, spot.lat, spot.lng)
-        end
+    puts "Searching for listings"
+    listings = @places_client.listings(lat, lng, name: title, radius: 5000)
+    puts "Got response #{listings.count} listings for location #{bjjmapper_location_id} (using title)"
+    if listings.nil?
+      listings = @places_client.listings(lat, lng, types: ['gym', 'health'])
+      puts "Got response #{listings.count} listings for location #{bjjmapper_location_id} (using type: gym, health)"
+    end
+      
+    if !listings.nil?
+      listings = listings.sort_by do |listing|
+        distance = Math.circle_distance(lat, lng, listing.lat, listing.lng)
+        puts "Listing '#{listing.name}' is #{distance} away from the location"
+        distance
+      end.select do |listing|
+        distance = Math.circle_distance(lat, lng, listing.lat, listing.lng)
+        distance < LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI
       end
     end
 
-    return nil unless spots.count > 0
-    spots
+    return nil if listings.nil? || listings.count == 0
+    listings
   end
 
-  def self.build_spot(response, location_id, batch_id)
+  def self.build_listing(response, location_id, batch_id)
     GoogleSpot.from_response(response, bjjmapper_location_id: location_id, batch_id: batch_id)
   end
 end
