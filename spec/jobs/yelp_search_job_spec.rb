@@ -34,10 +34,22 @@ describe YelpSearchJob do
         yelp.stub(:search).and_return(yelp_response)
       end
       
-      it 'enqueues an associate job for the first/best listing' do
-        Resque.should_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(yelp_id: expected_id))
+      context 'when the results are too far away from the location' do
+        before { Math.stub(:circle_distance).and_return(100000.0) }
+        it 'does not enqueue a job for the first listing' do
+          Resque.should_not_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(yelp_id: expected_id))
 
-        YelpSearchJob.perform(model)
+          YelpSearchJob.perform(model)
+        end
+      end
+
+      context 'when the results are not too far away from the location' do
+        before { Math.stub(:circle_distance).and_return(0.0) }
+        it 'enqueues an associate job for the first/best listing' do
+          Resque.should_receive(:enqueue).with(YelpFetchAndAssociateJob, hash_including(yelp_id: expected_id))
+
+          YelpSearchJob.perform(model)
+        end
       end
 
       # These tests need to be moved to the FetchAndAssociate spec

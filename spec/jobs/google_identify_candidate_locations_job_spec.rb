@@ -13,7 +13,7 @@ describe GoogleIdentifyCandidateLocationsJob do
 
     def stub_bjjmapper_search(response = [])
       bjjmapper.should_receive(:map_search)
-        .with(hash_including({sort: 'distance', distance: GoogleIdentifyCandidateLocationsJob::DISTANCE_THRESHOLD_MI, lat: listing_lat, lng: listing_lng})) 
+        .with(hash_including({sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing_lat, lng: listing_lng})) 
         .and_return(response)
     end
 
