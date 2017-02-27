@@ -9,7 +9,7 @@ module UpdateLocationFromGoogleListingJob
     id = model['bjjmapper_location_id']
     
     conditions = {primary: true, bjjmapper_location_id: id}
-    spot = GoogleSpot.find(settings.app_db, conditions)
+    spot = GoogleSpot.find(@connection, conditions)
     
     @bjjmapper.update_location(id, spot.address_components.merge(coordinates: [spot.lng, spot.lat]))
   end
