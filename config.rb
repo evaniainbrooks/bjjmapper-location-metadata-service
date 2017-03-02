@@ -6,7 +6,10 @@ module LocationFetchService
   DATABASE_APP_DB = 'location_fetch_service' 
   DATABASE_URI = "mongodb://#{DATABASE_HOST}:#{DATABASE_PORT}/#{DATABASE_APP_DB}"
 
-  QUEUE_NAME = "locations"
+  AVATAR_SERVICE_HOST = 'localhost'
+  AVATAR_SERVICE_PORT = '80'
+
+  QUEUE_NAME = 'locations'
 
   GOOGLE_PLACES_API_KEY = ENV['GOOGLE_PLACES_API_KEY']
   YELP_API_KEY = {

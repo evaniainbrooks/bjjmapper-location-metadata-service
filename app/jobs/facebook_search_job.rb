@@ -5,6 +5,8 @@ require_relative '../../config'
 require_relative '../models/facebook_page'
 require_relative '../models/facebook_photo'
 
+require_relative '../../lib/avatar_service'
+
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
@@ -16,6 +18,8 @@ module FacebookSearchJob
 
   MAX_PHOTOS_PER_ALBUM = 20
   MAX_ALBUMS = 5
+
+  STORE_PROFILE_PICTURE = true
 
   REQUEST_FIELDS = %W(photos{#{PHOTO_FIELDS.join(',')}} overall_star_rating rating_count posts videos feed phone place_type link is_unclaimed is_verified is_permanently_closed hours founded fan_count checkins displayed_message_response_time display_subtext about bio description rating id name picture.width(#{PICTURE_WIDTH}) cover email location timezone updated_at albums{id,count,cover_photo,link,place,is_default,photos{#{PHOTO_FIELDS.join(',')}}} website).freeze
       
@@ -50,16 +54,22 @@ module FacebookSearchJob
         picture_response = listing['picture']['data']
         puts "Processing image #{picture_response.inspect}"
         
-        FacebookPhoto.from_response(picture_response, {
+        model = FacebookPhoto.from_response(picture_response, {
           facebook_id: facebook_id, 
           lat: lat, 
           lng: lng,
           bjjmapper_location_id: bjjmapper_location_id, 
           is_profile_photo: true
-        }).upsert(@connection, {
+        })
+          
+        model.upsert(@connection, {
           is_profile_photo: true, 
           facebook_id: facebook_id
         })
+
+        if STORE_PROFILE_PICTURE && !model.is_silhouette
+          avatar_service.set_profile_image(bjjmapper_location_id, model.source)
+        end
       end
 
       puts "Storing cover photo"
@@ -109,6 +119,11 @@ module FacebookSearchJob
         o.upsert(@connection, facebook_id: o.facebook_id)
       end
     end
+  end
+
+  def self.avatar_service
+    @_avatar_service ||= AvatarService.new(LocationFetchService::AVATAR_SERVICE_HOST, LocationFetchService::AVATAR_SERVICE_PORT)
+    @_avatar_service
   end
 
   def self.oauth_token
