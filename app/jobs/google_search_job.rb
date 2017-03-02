@@ -50,7 +50,7 @@ module GoogleSearchJob
     bjjmapper_location_id = model['id']
 
     puts "Searching for listings"
-    listings = @places_client.listings(lat, lng, name: title, radius: 5000)
+    listings = @places_client.spots(lat, lng, name: title, radius: 5000)
     puts "Got response #{listings.count} listings for location #{bjjmapper_location_id} (using title)"
     if listings.nil?
       listings = @places_client.listings(lat, lng, types: ['gym', 'health'])
