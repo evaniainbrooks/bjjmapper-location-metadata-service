@@ -2,7 +2,7 @@ require 'net/http'
 require 'json/ext'
 require 'uri'
 
-class AvatarService 
+class AvatarServiceClient
   API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"
 
   def initialize(host, port)

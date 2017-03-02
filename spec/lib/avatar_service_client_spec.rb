@@ -1,7 +1,7 @@
 require File.expand_path '../../spec_helper.rb', __FILE__
 
-describe AvatarService do
-  subject { AvatarService.new('localhost', 9999) }
+describe AvatarServiceClient do
+  subject { AvatarServiceClient.new('localhost', 9999) }
   describe '.create_location' do
     context 'with success response' do
       let(:response) { double('http_response', code: 202, body: nil) }

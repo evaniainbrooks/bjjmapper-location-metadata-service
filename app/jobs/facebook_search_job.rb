@@ -5,7 +5,7 @@ require_relative '../../config'
 require_relative '../models/facebook_page'
 require_relative '../models/facebook_photo'
 
-require_relative '../../lib/avatar_service'
+require_relative '../../lib/avatar_service_client'
 
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
@@ -122,7 +122,7 @@ module FacebookSearchJob
   end
 
   def self.avatar_service
-    @_avatar_service ||= AvatarService.new(LocationFetchService::AVATAR_SERVICE_HOST, LocationFetchService::AVATAR_SERVICE_PORT)
+    @_avatar_service ||= AvatarServiceClient.new(LocationFetchService::AVATAR_SERVICE_HOST, LocationFetchService::AVATAR_SERVICE_PORT)
     @_avatar_service
   end
 

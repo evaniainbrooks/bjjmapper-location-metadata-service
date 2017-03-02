@@ -38,7 +38,7 @@ describe FacebookSearchJob do
       before do
         FacebookPage.any_instance.stub(:upsert)
         FacebookPhoto.any_instance.stub(:upsert)
-        AvatarService.any_instance.stub(:set_profile_image)
+        AvatarServiceClient.any_instance.stub(:set_profile_image)
       end
 
       it 'upserts the image' do
@@ -48,7 +48,7 @@ describe FacebookSearchJob do
       end
 
       it 'uploads the image to the avatar service' do
-        AvatarService.any_instance.should_receive(:set_profile_image).with(expected_id, expected_url)
+        AvatarServiceClient.any_instance.should_receive(:set_profile_image).with(expected_id, expected_url)
 
         FacebookSearchJob.perform(model)
       end
