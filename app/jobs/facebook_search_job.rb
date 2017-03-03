@@ -1,11 +1,12 @@
 require 'resque'
 require 'mongo'
 require 'koala'
+
 require_relative '../../config'
 require_relative '../models/facebook_page'
 require_relative '../models/facebook_photo'
 
-require_relative '../../lib/avatar_service_client'
+require_relative './set_location_image_job'
 
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
@@ -68,7 +69,7 @@ module FacebookSearchJob
         })
 
         if STORE_PROFILE_PICTURE && !model.is_silhouette
-          avatar_service.set_profile_image(bjjmapper_location_id, model.source)
+          Resque.enqueue(SetLocationImageJob, bjjmapper_location_id, model.source)
         end
       end
 

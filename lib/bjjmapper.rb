@@ -10,6 +10,29 @@ class BJJMapper
     @port = port
   end
 
+  DUPLICATE_LOCATION = 1
+  def notify(notification_type, message, params = {})
+    query = {api_key: API_KEY}
+    uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/notifications.json?api_key=#{API_KEY}")
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.body = { :type => notification_type, :message => message, :extras => params }.to_json
+    request.content_type = 'application/json'
+
+    begin
+      response = http.request(request)
+      unless response.code.to_i == 200
+        puts "Unexpected response #{response.inspect}"
+      end
+
+      response.code.to_i
+    rescue StandardError => e
+      puts e.message
+      500
+    end
+  end
+
   def create_review(location_id, review_data)
     query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/reviews.json?api_key=#{API_KEY}")

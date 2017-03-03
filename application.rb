@@ -16,6 +16,7 @@ require_relative 'app/jobs/google_fetch_and_associate_job'
 require_relative 'app/jobs/yelp_fetch_and_associate_job'
 
 require_relative 'app/jobs/random_location_refresh_job'
+require_relative 'app/jobs/random_location_audit_job'
 
 require_relative 'app/models/facebook_page'
 require_relative 'app/models/facebook_photo'
@@ -303,6 +304,7 @@ module LocationFetchService
       scope = params[:scope]
       count = params[:count]
 
+      Resque.enqueue(RandomLocationAuditJob, count: count)
       Resque.enqueue(RandomLocationRefreshJob, count: count, scope: scope)
       status 202
     end

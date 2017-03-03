@@ -38,7 +38,7 @@ describe FacebookSearchJob do
       before do
         FacebookPage.any_instance.stub(:upsert)
         FacebookPhoto.any_instance.stub(:upsert)
-        AvatarServiceClient.any_instance.stub(:set_profile_image)
+        Resque.stub(:enqueue)
       end
 
       it 'upserts the image' do
@@ -47,8 +47,8 @@ describe FacebookSearchJob do
         FacebookSearchJob.perform(model)
       end
 
-      it 'uploads the image to the avatar service' do
-        AvatarServiceClient.any_instance.should_receive(:set_profile_image).with(expected_id, expected_url)
+      it 'enqueues a set location image job' do
+        Resque.should_receive(:enqueue).with(SetLocationImageJob, expected_id, expected_url)
 
         FacebookSearchJob.perform(model)
       end
