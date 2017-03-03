@@ -26,17 +26,21 @@ module RandomLocationAuditJob
       end
 
       puts "Auditing location #{location.inspect}"
+      audit_duplicates(location)
+    end
+  end
 
-      params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: location['lat'], lng: location['lng']}
-      nearby_locations = @bjjmapper.map_search(params) || []
-      nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
+  def self.audit_duplicates(location)
+    params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: location['lat'], lng: location['lng']}
+    nearby_locations = @bjjmapper.map_search(params) || []
+    nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
 
-      if nearby_locations.count > 1
-        puts "Found possible duplicate location #{nearby_locations.first['title']}"
-        @bjjmapper.notify(BJJMapper::DUPLICATE_LOCATION, 
-                          "Found possible duplicate location for #{location['title']}, title is #{nearby_locations.first['title']}", 
-                          location_id: location['id'], duplicate_id: nearby_locations.first['id'])
-      end
+    if nearby_locations.count > 0
+      puts "Found possible duplicate location #{nearby_locations.first['title']}"
+      @bjjmapper.notify(location['id'], BJJMapper::DUPLICATE_LOCATION, 
+                        message: "Possible duplicate location for #{location['title']}, #{nearby_locations.first['title']}",
+                        duplicate_location_id: nearby_locations.first['id'])
+      puts "Created notification"
     end
   end
 end

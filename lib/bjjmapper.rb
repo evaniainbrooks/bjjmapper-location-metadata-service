@@ -11,13 +11,13 @@ class BJJMapper
   end
 
   DUPLICATE_LOCATION = 1
-  def notify(notification_type, message, params = {})
+  def notify(location_id, notification_type, params = {})
     query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/notifications.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.body = { :type => notification_type, :message => message, :extras => params }.to_json
+    request.body = { :type => notification_type }.merge(params).to_json
     request.content_type = 'application/json'
 
     begin
@@ -26,6 +26,7 @@ class BJJMapper
         puts "Unexpected response #{response.inspect}"
       end
 
+      puts response.inspect
       response.code.to_i
     rescue StandardError => e
       puts e.message

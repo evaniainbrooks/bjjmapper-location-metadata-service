@@ -122,11 +122,6 @@ module FacebookSearchJob
     end
   end
 
-  def self.avatar_service
-    @_avatar_service ||= AvatarServiceClient.new(LocationFetchService::AVATAR_SERVICE_HOST, LocationFetchService::AVATAR_SERVICE_PORT)
-    @_avatar_service
-  end
-
   def self.oauth_token
     token = @redis.get(OAUTH_TOKEN_CACHE_KEY)
     if token.nil?
