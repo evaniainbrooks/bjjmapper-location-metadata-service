@@ -28,7 +28,8 @@ module RandomLocationAuditJob
       puts "Auditing location #{location.inspect}"
 
       params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: location['lat'], lng: location['lng']}
-      nearby_locations = @bjjmapper.map_search(params)
+      nearby_locations = @bjjmapper.map_search(params) || []
+      nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
 
       if nearby_locations.count > 1
         puts "Found possible duplicate location #{nearby_locations.first['title']}"
