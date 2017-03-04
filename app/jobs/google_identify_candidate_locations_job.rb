@@ -60,6 +60,7 @@ module GoogleIdentifyCandidateLocationsJob
     else
       new_loc = create_location_from_listing!(listing)
       enqueue_associate_listing_job(listing, new_loc)
+      enqueue_update_location_from_listing_job(new_loc)
       new_loc['id']
     end
   end
@@ -69,6 +70,13 @@ module GoogleIdentifyCandidateLocationsJob
     Resque.enqueue(GoogleFetchAndAssociateJob, {
       bjjmapper_location_id: location['id'],
       place_id: listing.place_id
+    })
+  end
+  
+  def self.enqueue_update_location_from_listing_job(location)
+    puts "Update location #{location['title']} from Google listing"
+    Resque.enqueue(UpdateLocationFromGoogleListingJob, {
+      bjjmapper_location_id: location['id']
     })
   end
 

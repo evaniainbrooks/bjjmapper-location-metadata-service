@@ -40,13 +40,6 @@ describe GoogleFetchAndAssociateJob do
 
       described_class.perform(model)
     end
-      
-    it 'enqueues an update location job' do
-      google.stub(:spot).and_return(google_business)
-      Resque.should_receive(:enqueue).with(UpdateLocationFromGoogleListingJob, hash_including(bjjmapper_location_id: loc_id))
-
-      described_class.perform(model)
-    end
   end
 end
 

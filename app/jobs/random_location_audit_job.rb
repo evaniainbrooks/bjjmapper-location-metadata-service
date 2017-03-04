@@ -12,6 +12,7 @@ module RandomLocationAuditJob
   @queue = LocationFetchService::QUEUE_NAME
   @bjjmapper = BJJMapper.new('localhost', 80) 
 
+  LOCATION_DUPLICATE_DISTANCE_THRESHOLD = 0.25
   DEFAULT_LOCATION_COUNT = 100 
 
   def self.perform(params)
@@ -31,7 +32,7 @@ module RandomLocationAuditJob
   end
 
   def self.audit_duplicates(location)
-    params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: location['lat'], lng: location['lng']}
+    params = {sort: 'distance', distance: LOCATION_DUPLICATE_DISTANCE_THRESHOLD, lat: location['lat'], lng: location['lng']}
     nearby_locations = @bjjmapper.map_search(params) || []
     nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
 

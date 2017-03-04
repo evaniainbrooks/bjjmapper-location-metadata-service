@@ -5,8 +5,8 @@ describe GoogleIdentifyCandidateLocationsJob do
     let(:bjjmapper) { double }
     let(:google_places) { double }
     before do
-      GoogleIdentifyCandidateLocationsJob.instance_variable_set("@bjjmapper", bjjmapper)
-      GoogleIdentifyCandidateLocationsJob.instance_variable_set("@places_client", google_places)
+      described_class.instance_variable_set("@bjjmapper", bjjmapper)
+      described_class.instance_variable_set("@places_client", google_places)
     
       Resque.stub(:enqueue)
     end
@@ -33,7 +33,7 @@ describe GoogleIdentifyCandidateLocationsJob do
     it 'searches google for listings' do
       stub_google_search([])
 
-      GoogleIdentifyCandidateLocationsJob.perform(model)
+      described_class.perform(model)
     end
     
     it 'searches bjj mapper for nearby locations' do
@@ -41,7 +41,7 @@ describe GoogleIdentifyCandidateLocationsJob do
       stub_bjjmapper_search
       bjjmapper.stub(:create_location).and_return(model)
 
-      GoogleIdentifyCandidateLocationsJob.perform(model)
+      described_class.perform(model)
     end
 
     context 'with listings' do
@@ -54,7 +54,7 @@ describe GoogleIdentifyCandidateLocationsJob do
         it 'enqueues a fetch and associate job for the closest location' do
           Resque.should_receive(:enqueue).with(GoogleFetchAndAssociateJob, hash_including(bjjmapper_location_id: closest_location['id'], place_id: google_business.id))
 
-          GoogleIdentifyCandidateLocationsJob.perform(model)
+          described_class.perform(model)
         end
       end
       context 'when there are no nearby bjjmapper locations' do
@@ -69,7 +69,7 @@ describe GoogleIdentifyCandidateLocationsJob do
               .with(hash_including(title: whitelist_google_business.name, status: BJJMapper::LOCATION_STATUS_VERIFIED))
               .and_return(location_response)
 
-            GoogleIdentifyCandidateLocationsJob.perform(model)
+            described_class.perform(model)
           end
         end
         context 'when the title does not contain a whitelist word' do
@@ -79,13 +79,19 @@ describe GoogleIdentifyCandidateLocationsJob do
               .with(hash_including(title: google_business.name, status: BJJMapper::LOCATION_STATUS_PENDING))
               .and_return(location_response)
 
-            GoogleIdentifyCandidateLocationsJob.perform(model)
+            described_class.perform(model)
           end
           it 'persists the listing with the newly created location' do
             bjjmapper.stub(:create_location).and_return(location_response)
             GoogleSpot.any_instance.should_receive(:upsert).with(anything, bjjmapper_location_id: location_response['id'], place_id: google_business.id)
 
-            GoogleIdentifyCandidateLocationsJob.perform(model)
+            described_class.perform(model)
+          end
+          it 'enqueues an update location job' do
+            bjjmapper.stub(:create_location).and_return(location_response)
+            Resque.should_receive(:enqueue).with(UpdateLocationFromGoogleListingJob, hash_including(bjjmapper_location_id: location_response['id']))
+
+            described_class.perform(model)
           end
         end
       end

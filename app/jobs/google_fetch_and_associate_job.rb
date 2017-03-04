@@ -54,7 +54,5 @@ module GoogleFetchAndAssociateJob
     
     puts "Storing listing #{detailed_listing.inspect}"
     detailed_listing.upsert(@connection, bjjmapper_location_id: bjjmapper_location_id, place_id: detailed_listing.place_id)
-  
-    Resque.enqueue(UpdateLocationFromGoogleListingJob, bjjmapper_location_id: bjjmapper_location_id)
   end
 end
