@@ -41,7 +41,7 @@ module FacebookSearchJob
     end
 
     listings.first.tap do |listing|
-      puts "First listing is #{listing.inspect}"
+      puts "First listing is #{listing['id']}"
       facebook_id = listing['id']
       FacebookPage.from_response(listing, {
         facebook_id: facebook_id, 
@@ -53,8 +53,6 @@ module FacebookSearchJob
       puts "Storing profile photo"
       if (listing['picture'])
         picture_response = listing['picture']['data']
-        puts "Processing image #{picture_response.inspect}"
-        
         model = FacebookPhoto.from_response(picture_response, {
           facebook_id: facebook_id, 
           lat: lat, 
@@ -76,8 +74,6 @@ module FacebookSearchJob
       puts "Storing cover photo"
       if (listing['cover'])
         picture_response = listing['cover']
-        puts "Processing image #{picture_response.inspect}"
-        
         FacebookPhoto.from_response(picture_response, { 
           facebook_id: facebook_id, 
           lat: lat,
