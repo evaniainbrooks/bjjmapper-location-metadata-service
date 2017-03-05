@@ -12,7 +12,7 @@ module RandomLocationAuditJob
   @queue = LocationFetchService::QUEUE_NAME
   @bjjmapper = BJJMapperClient.new('localhost', 80) 
 
-  LOCATION_DUPLICATE_DISTANCE_THRESHOLD = 0.25
+  LOCATION_DUPLICATE_DISTANCE_THRESHOLD = 0.3
   DEFAULT_LOCATION_COUNT = 100 
 
   def self.perform(params)
@@ -36,16 +36,19 @@ module RandomLocationAuditJob
     nearby_locations = @bjjmapper.map_search(params) || []
     nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
 
-    if nearby_locations.count > 0
-      puts "Found possible duplicate location #{nearby_locations.first['title']}"
-      @bjjmapper.notify(type: BJJMapper::DUPLICATE_LOCATION, 
-                        message: "Possible duplicate location for #{location['title']}, #{nearby_locations.first['title']}",
-                        source: 'AuditJob',
-                        lat: location['lat'],
-                        lng: location['lng'],
-                        info: { location_id: location['id'], duplicate_location_id: nearby_locations.first['id'] })
-
-      puts "Created notification"
+    if nearby_locations.count <= 0
+      puts "Couldn't find any nearby locations"
+      return
     end
+    
+    puts "Found possible duplicate location #{nearby_locations.first['title']}"
+    @bjjmapper.notify(type: BJJMapperClient::DUPLICATE_LOCATION, 
+                      message: "Possible duplicate location for #{location['title']}, #{nearby_locations.first['title']}",
+                      source: 'AuditJob',
+                      lat: location['lat'],
+                      lng: location['lng'],
+                      info: { location_id: location['id'], duplicate_location_id: nearby_locations.first['id'] })
+
+    puts "Created notification"
   end
 end
