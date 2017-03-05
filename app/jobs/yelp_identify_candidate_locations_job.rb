@@ -2,13 +2,13 @@ require 'resque'
 require 'mongo'
 require_relative '../../config'
 require_relative '../models/yelp_business'
-require_relative '../../lib/bjjmapper'
+require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
 require_relative '../../lib/yelp_fusion_client'
 
 module YelpIdentifyCandidateLocationsJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
-  @bjjmapper = BJJMapper.new('localhost', 80)
+  @bjjmapper = BJJMapperClient.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
@@ -90,7 +90,7 @@ module YelpIdentifyCandidateLocationsJob
       source: 'Yelp',
       phone: o[:phone],
       flag_closed: o[:is_closed],
-      status: should_whitelist?(o[:title]) ? BJJMapper::LOCATION_STATUS_VERIFIED : BJJMapper::LOCATION_STATUS_PENDING
+      status: should_whitelist?(o[:title]) ? BJJMapperClient::LOCATION_STATUS_VERIFIED : BJJMapperClient::LOCATION_STATUS_PENDING
     })
 
     puts "Created #{response['id']} location"

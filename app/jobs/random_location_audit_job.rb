@@ -2,7 +2,7 @@ require 'resque'
 require 'mongo'
 require 'koala'
 require_relative '../../config'
-require_relative '../../lib/bjjmapper'
+require_relative '../../lib/bjjmapper_client'
 
 require_relative './google_search_job'
 require_relative './yelp_search_job'
@@ -10,7 +10,7 @@ require_relative './facebook_search_job'
 
 module RandomLocationAuditJob 
   @queue = LocationFetchService::QUEUE_NAME
-  @bjjmapper = BJJMapper.new('localhost', 80) 
+  @bjjmapper = BJJMapperClient.new('localhost', 80) 
 
   LOCATION_DUPLICATE_DISTANCE_THRESHOLD = 0.25
   DEFAULT_LOCATION_COUNT = 100 
@@ -38,9 +38,13 @@ module RandomLocationAuditJob
 
     if nearby_locations.count > 0
       puts "Found possible duplicate location #{nearby_locations.first['title']}"
-      @bjjmapper.notify(location['id'], BJJMapper::DUPLICATE_LOCATION, 
+      @bjjmapper.notify(type: BJJMapper::DUPLICATE_LOCATION, 
                         message: "Possible duplicate location for #{location['title']}, #{nearby_locations.first['title']}",
-                        duplicate_location_id: nearby_locations.first['id'])
+                        source: 'AuditJob',
+                        lat: location['lat'],
+                        lng: location['lng'],
+                        info: { location_id: location['id'], duplicate_location_id: nearby_locations.first['id'] })
+
       puts "Created notification"
     end
   end

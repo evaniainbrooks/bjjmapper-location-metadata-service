@@ -5,13 +5,13 @@ require_relative '../models/google_spot'
 require_relative '../models/google_review'
 require_relative '../models/google_photo'
 require_relative '../../config'
-require_relative '../../lib/bjjmapper'
+require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
 
 module GoogleIdentifyCandidateLocationsJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
 
-  @bjjmapper = BJJMapper.new('localhost', 80)
+  @bjjmapper = BJJMapperClient.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
   @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
@@ -97,7 +97,7 @@ module GoogleIdentifyCandidateLocationsJob
       phone: o[:phone],
       website: o[:website],
       flag_closed: o[:is_closed],
-      status: should_whitelist?(o[:title]) ? BJJMapper::LOCATION_STATUS_VERIFIED : BJJMapper::LOCATION_STATUS_PENDING
+      status: should_whitelist?(o[:title]) ? BJJMapperClient::LOCATION_STATUS_VERIFIED : BJJMapperClient::LOCATION_STATUS_PENDING
     })
 
     puts "Created #{response['id']} location"

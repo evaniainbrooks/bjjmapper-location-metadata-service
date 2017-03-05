@@ -1,7 +1,7 @@
 require File.expand_path '../../spec_helper.rb', __FILE__
 
-describe BJJMapper do
-  subject { BJJMapper.new('localhost', 9999) }
+describe BJJMapperClient do
+  subject { BJJMapperClient.new('localhost', 9999) }
   describe '.create_review' do
     context 'with success response' do
       let(:review) { { :body => 'meow meow', :author_name => 'Evan', :author_link => 'BJJmapper.com', :rating => 5, :created_at => Time.now }.to_json }

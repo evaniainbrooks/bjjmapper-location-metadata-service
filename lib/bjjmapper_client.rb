@@ -2,7 +2,7 @@ require 'net/http'
 require 'json/ext'
 require 'uri'
 
-class BJJMapper
+class BJJMapperClient
   API_KEY = "d72d574f-a395-419e-879c-2b2d39a51ffc"
 
   def initialize(host, port)
@@ -11,13 +11,12 @@ class BJJMapper
   end
 
   DUPLICATE_LOCATION = 1
-  def notify(location_id, notification_type, params = {})
-    query = {api_key: API_KEY}
-    uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/notifications.json?api_key=#{API_KEY}")
+  def notify(params = {})
+    uri = URI("http://#{@host}:#{@port}/api/notifications.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
     request = Net::HTTP::Post.new(uri.request_uri)
-    request.body = { :type => notification_type }.merge(params).to_json
+    request.body = { notification: params }.to_json
     request.content_type = 'application/json'
 
     begin
@@ -35,7 +34,6 @@ class BJJMapper
   end
 
   def create_review(location_id, review_data)
-    query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations/#{location_id}/reviews.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
@@ -62,7 +60,6 @@ class BJJMapper
   LOCATION_STATUS_REJECTED = 3
   
   def create_location(location_data)
-    query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
@@ -85,7 +82,6 @@ class BJJMapper
   end
   
   def update_location(id, location_data)
-    query = {api_key: API_KEY}
     uri = URI("http://#{@host}:#{@port}/api/locations/#{id}.json?api_key=#{API_KEY}")
 
     http = Net::HTTP.new(uri.host, uri.port)
