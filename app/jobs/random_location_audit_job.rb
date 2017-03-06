@@ -32,7 +32,7 @@ module RandomLocationAuditJob
   end
 
   def self.audit_duplicates(location)
-    params = {sort: 'distance', distance: LOCATION_DUPLICATE_DISTANCE_THRESHOLD, lat: location['lat'], lng: location['lng']}
+    params = {sort: 'distance', distance: LOCATION_DUPLICATE_DISTANCE_THRESHOLD, lat: location['lat'], lng: location['lng'], closed: 1}
     nearby_locations = @bjjmapper.map_search(params) || []
     nearby_locations = nearby_locations.select { |loc| loc['id'] != location['id'] }
 

@@ -31,7 +31,7 @@ module GoogleIdentifyCandidateLocationsJob
         next
       end
 
-      map_search_params = { sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng }
+      map_search_params = { rejected: 1, unverified: 1, closed: 1, sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng }
       bjjmapper_nearby_locations = @bjjmapper.map_search(map_search_params)
       puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 

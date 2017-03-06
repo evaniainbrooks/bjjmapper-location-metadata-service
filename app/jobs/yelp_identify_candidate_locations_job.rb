@@ -33,7 +33,7 @@ module YelpIdentifyCandidateLocationsJob
           next
         end
 
-        params = {sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng}
+        params = { rejected: 1, unverified: 1, closed: 1, sort: 'distance', distance: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI, lat: listing.lat, lng: listing.lng}
         bjjmapper_nearby_locations = @bjjmapper.map_search(params)
         puts "Founds nearby locations #{bjjmapper_nearby_locations.inspect}"
 
