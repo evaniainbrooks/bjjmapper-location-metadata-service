@@ -112,7 +112,7 @@ class BJJMapperClient
   end
 
   def map_search(params)
-    query = params.merge(:api_key => API_KEY, :count => 100, :rejected => 1, :closed => 1, :unverified => 1)
+    query = params.merge(:api_key => API_KEY, :count => 100)
     query = URI.encode_www_form(query)
     uri = URI("http://#{@host}:#{@port}/api/locations.json?#{query}")
 
