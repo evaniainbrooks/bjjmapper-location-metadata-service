@@ -2,6 +2,7 @@ require 'resque'
 require 'mongo'
 require 'google_places'
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../models/google_spot'
 require_relative '../../lib/circle_distance'
 require_relative './google_fetch_and_associate_job'
@@ -9,7 +10,7 @@ require_relative './google_fetch_and_associate_job'
 module GoogleSearchJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+  @connection = LocationFetchService::MONGO_CONNECTION
 
   DISTANCE_THRESHOLD_MI = 0.4 # miles
   LARGE_IMAGE_WIDTH = 500

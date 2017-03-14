@@ -2,6 +2,7 @@ require 'resque'
 require 'mongo'
 require 'google_places'
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../models/google_spot'
 require_relative '../models/google_review'
 require_relative '../models/google_photo'
@@ -11,7 +12,7 @@ require_relative '../jobs/update_location_from_google_listing_job'
 module GoogleFetchAndAssociateJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = LocationFetchService::MONGO_CONNECTION
   
   LARGE_IMAGE_WIDTH = 500
   IMAGE_WIDTH = 100

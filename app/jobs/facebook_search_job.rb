@@ -3,6 +3,7 @@ require 'mongo'
 require 'koala'
 
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../models/facebook_page'
 require_relative '../models/facebook_photo'
 
@@ -10,7 +11,7 @@ require_relative './set_location_image_job'
 
 module FacebookSearchJob
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+  @connection = LocationFetchService::MONGO_CONNECTION
   @redis = ::Redis.new(host: LocationFetchService::DATABASE_HOST, password: ENV['REDIS_PASS'])
 
   PICTURE_WIDTH = 1000

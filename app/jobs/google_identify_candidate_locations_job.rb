@@ -5,6 +5,7 @@ require_relative '../models/google_spot'
 require_relative '../models/google_review'
 require_relative '../models/google_photo'
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
 
@@ -14,7 +15,7 @@ module GoogleIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapperClient.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+  @connection = LocationFetchService::MONGO_CONNECTION
 
   DEFAULT_TITLE = 'brazilian'
   CATEGORY_FILTER_MARTIAL_ARTS = ['gym', 'health']

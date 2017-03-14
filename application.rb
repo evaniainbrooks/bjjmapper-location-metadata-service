@@ -29,6 +29,7 @@ require_relative 'app/models/yelp_business'
 require_relative 'app/models/yelp_review'
 require_relative 'app/models/yelp_photo'
 
+require_relative 'app/models/responses/location_reviews_response'
 require_relative 'app/models/responses/reviews_response'
 require_relative 'app/models/responses/photos_response'
 require_relative 'app/models/responses/detail_response'
@@ -39,6 +40,8 @@ module LocationFetchService
   WORKERS = ['locations_queue_worker']
 
   class Application < Sinatra::Application
+    @mongo_connection = LocationFetchService::MONGO_CONNECTION
+
     configure do
       set :app_file, __FILE__
       set :bind, '0.0.0.0'
@@ -46,7 +49,7 @@ module LocationFetchService
 
       set :app_database_name, DATABASE_APP_DB
 
-      connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+      connection = LocationFetchService::MONGO_CONNECTION 
       set :app_db, connection
 
       Resque.redis = ::Redis.new(host: DATABASE_HOST, password: ENV['REDIS_PASS'])
@@ -57,6 +60,39 @@ module LocationFetchService
     #
     before { content_type :json }
     before { halt 401 and return false unless params[:api_key] == APP_API_KEY }
+
+    get '/locations/photos' do
+      distance = params(:distance, 25).to_i
+      lat = params.fetch(:lat, nil).to_f
+      lng = params.fetch(:lng, nil).to_f
+      count = params.fetch(:count, 100).to_i
+
+      conditions = { 'coordinates' => { '$geoWithin' => { '$centerSphere' => [[lng, lat], distance] }}}
+      sort = [:created_at, -1]
+      @google_photos = GooglePhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
+      @facebook_photos = FacebookPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
+      @yelp_photos = YelpPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count) 
+
+      photos = {google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
+      Responses::PhotosResponse.respond(photos, count: count).to_json
+    end
+    
+    get '/locations/reviews' do
+      distance = params(:distance, 25).to_i
+      lat = params.fetch(:lat, nil).to_f
+      lng = params.fetch(:lng, nil).to_f
+      count = params.fetch(:count, 100).to_i
+
+      conditions = { 'coordinates' => { '$geoWithin' => { '$centerSphere' => [[lng, lat], distance] }}}
+      sort = [:created_at, -1]
+      @google_photos = GoogleReview.find_all(settings.app_db, conditions, sort: sort, limit: count)
+      @yelp_photos = YelpReview.find_all(settings.app_db, conditions, sort: sort, limit: count)
+      
+      return Responses::ReviewsResponse.respond(
+        {yelp: @yelp_reviews, google: @google_reviews},
+        count: count
+      ).to_json
+    end
 
     #
     # Locations before (set location)
@@ -72,7 +108,7 @@ module LocationFetchService
       @yelp_business = YelpBusiness.find(settings.app_db, conditions)
     end
 
-    before '/locations/*' do
+    before '/locations/:bjjmapper_location_id/*' do
       pass if 'associate' == request.path_info.split('/')[2]
       pass if 'listings' == request.path_info.split('/')[2]
 
@@ -117,7 +153,7 @@ module LocationFetchService
         @yelp_reviews = YelpReview.find_all(settings.app_db, yelp_review_conditions)
       end
 
-      return Responses::ReviewsResponse.respond(
+      return Responses::LocationReviewsResponse.respond(
         {google: @spot, yelp: @yelp_business},
         {google: @google_reviews, yelp: @yelp_reviews}
       ).to_json
@@ -136,7 +172,7 @@ module LocationFetchService
       end.to_json
     end
 
-    get '/locations/:bjjmapper_location_id/detail' do
+    get '/locations/:bjjmapper_location_id' do
       context = {
         combined: (params[:combined] || 0).to_i == 1 ? true : false,
         title: params[:title],
@@ -155,7 +191,7 @@ module LocationFetchService
       return Responses::DetailResponse.respond(context, listings).to_json
     end
     
-    post '/locations/:bjjmapper_location_id/associate' do
+    post '/locations/:bjjmapper_location_id/listings/associate' do
       if params[:facebook_id]
         puts "Checking facebook association"
         if @page && params[:facebook_id] != @page.facebook_id
@@ -238,7 +274,7 @@ module LocationFetchService
     #
     # Search before
     #
-    before '/search/async' do
+    before '/locations/:bjjmapper_location_id/search' do
       begin
         request.body.rewind
         body = JSON.parse(request.body.read)
@@ -254,18 +290,17 @@ module LocationFetchService
     #
     # Search routes
     #
-    post '/search/async' do
+    post '/locations/search' do
       scope = params[:scope]
-      location_id = @location['id']
+      Resque.enqueue(GoogleIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'google')
+      Resque.enqueue(YelpIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'yelp')
+      
+      status 202
+    end
 
-      if location_id.nil?
-        Resque.enqueue(GoogleIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'google')
-        Resque.enqueue(YelpIdentifyCandidateLocationsJob, @location) if scope.nil? || (scope == 'yelp')
-        
-        status 202
-        return
-      end
-
+    post '/locations/:bjjmapper_location_id/search' do
+      scope = params[:scope]
+      location_id = params[:bjjmapper_location_id]
       conditions = {bjjmapper_location_id: location_id, primary: true}
       if scope.nil? || scope == 'google'
         listing = GoogleSpot.find(settings.app_db, conditions)
@@ -300,7 +335,7 @@ module LocationFetchService
       status 202
     end
 
-    post '/search/random' do
+    post '/locations/refresh' do
       scope = params[:scope]
       count = params[:count]
 

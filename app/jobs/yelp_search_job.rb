@@ -1,6 +1,7 @@
 require 'resque'
 require 'mongo'
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../models/yelp_business'
 require_relative '../../lib/yelp_fusion_client'
 require_relative './google_fetch_and_associate_job'
@@ -8,7 +9,7 @@ require_relative './google_fetch_and_associate_job'
 module YelpSearchJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+  @connection = LocationFetchService::MONGO_CONNECTION
 
   def self.perform(model)
     bjjmapper_location_id = model['id']

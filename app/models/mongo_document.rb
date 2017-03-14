@@ -4,8 +4,8 @@ module MongoDocument
   end
 
   module ClassMethods
-    def find(connection, conditions)
-      model_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions).first
+    def find(connection, conditions, params = {})
+      model_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions, params).first
       
       return nil if model_attrs.nil?
       return self.new(model_attrs)
@@ -15,8 +15,8 @@ module MongoDocument
       connection[self.const_get(:COLLECTION_NAME)].update_one(conditions, {'$set' => attributes}, {:upsert => true})
     end
 
-    def find_all(connection, conditions)
-      models_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions)
+    def find_all(connection, conditions, params = {})
+      models_attrs = connection[self.const_get(:COLLECTION_NAME)].find(conditions, params)
       
       return nil if models_attrs.nil?
       return models_attrs.map { |model_attrs| self.new(model_attrs) }

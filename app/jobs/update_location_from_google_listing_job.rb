@@ -1,8 +1,10 @@
+require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../../lib/bjjmapper_client'
 
 module UpdateLocationFromGoogleListingJob
   @bjjmapper = BJJMapperClient.new('localhost', 80)
-  @connection = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
+  @connection = LocationFetchService::MONGO_CONNECTION
   @queue = LocationFetchService::QUEUE_NAME
 
   def self.perform(model)

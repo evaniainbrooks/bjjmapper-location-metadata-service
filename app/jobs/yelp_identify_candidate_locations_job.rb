@@ -1,6 +1,7 @@
 require 'resque'
 require 'mongo'
 require_relative '../../config'
+require_relative '../../database_client'
 require_relative '../models/yelp_business'
 require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
@@ -11,7 +12,7 @@ module YelpIdentifyCandidateLocationsJob
   @bjjmapper = BJJMapperClient.new('localhost', 80)
 
   @queue = LocationFetchService::QUEUE_NAME
-  @connection = Mongo::Client.new(LocationFetchService::DATABASE_URI)
+  @connection = LocationFetchService::MONGO_CONNECTION
 
   PAGE_LIMIT = 20
   PAGE_WAIT_SECONDS = 2

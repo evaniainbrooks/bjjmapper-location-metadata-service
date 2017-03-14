@@ -17,14 +17,14 @@ describe MongoDocument do
   end
   describe '#find' do
     let(:conditions) { { test_field: 123 } }
-    before { mongo.should_receive(:find).with(conditions).and_return(double(first: nil)) }
+    before { mongo.should_receive(:find).with(conditions, anything).and_return(double(first: nil)) }
     it 'calls find_one on the interface' do
       test_class.find(connection, conditions)
     end
   end
   describe '#find_all' do
     let(:conditions) { { test_field: 123 } }
-    before { mongo.should_receive(:find).with(conditions) }
+    before { mongo.should_receive(:find).with(conditions, anything) }
     it 'calls find on the interface' do
       test_class.find_all(connection, conditions)
     end
