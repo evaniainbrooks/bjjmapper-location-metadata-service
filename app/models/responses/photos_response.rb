@@ -7,7 +7,7 @@ module Responses
       count = opts[:count] || DEFAULT_COUNT
 
       google = (photos[:google] || []).collect do |o|
-        o.as_json.merge(small_url: o.url.gsub(/w\d\d\d/, 'w100'))
+        o.as_json.merge(small_url: o.url.try(:gsub, /w\d\d\d/, 'w100'))
       end
         .uniq{|o| o[:key]}
         .uniq{|o| o[:url]}

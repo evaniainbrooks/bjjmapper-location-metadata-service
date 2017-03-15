@@ -73,8 +73,28 @@ describe 'LocationFetchService' do
       end
     end
   end
+  describe 'GET /locations/reviews' do
+    let(:request) { { :lat => 80.0, :lng => 80.0 } }
+    let(:review) { GoogleReview.new }
+    before { GoogleReview.stub(:find_all).and_return([review]) }
+    it 'returns reviews near lat lng' do
+      get "/locations/reviews?api_key=#{api_key}", request, content_type
+      last_response.status.should eq 200
+    end
+  end
+  describe 'GET /locations/photos' do
+    let(:request) { { :lat => 80.0, :lng => 80.0 } }
+    let(:photo) { GooglePhoto.new }
+    before { GooglePhoto.stub(:find_all).and_return([photo]) }
+    it 'returns reviews near lat lng' do
+      get "/locations/photos?api_key=#{api_key}", request, content_type
+      last_response.status.should eq 200
+    end
+  end
+  describe 'GET /locations/:id' do
 
-  describe 'GET /locations/:id/detail' do
+  end
+  describe 'GET /locations/:id/listings' do
 
   end
   describe 'GET /locations/:id/reviews' do

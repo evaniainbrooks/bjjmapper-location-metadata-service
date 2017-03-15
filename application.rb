@@ -62,7 +62,7 @@ module LocationFetchService
     before { halt 401 and return false unless params[:api_key] == APP_API_KEY }
 
     get '/locations/photos' do
-      distance = params(:distance, 25).to_i
+      distance = params.fetch(:distance, 25).to_i
       lat = params.fetch(:lat, nil).to_f
       lng = params.fetch(:lng, nil).to_f
       count = params.fetch(:count, 100).to_i
@@ -78,7 +78,7 @@ module LocationFetchService
     end
     
     get '/locations/reviews' do
-      distance = params(:distance, 25).to_i
+      distance = params.fetch(:distance, 25).to_i
       lat = params.fetch(:lat, nil).to_f
       lng = params.fetch(:lng, nil).to_f
       count = params.fetch(:count, 100).to_i
