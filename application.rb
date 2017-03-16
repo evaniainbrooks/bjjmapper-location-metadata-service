@@ -151,15 +151,28 @@ module LocationFetchService
       scope = params[:scope]
 
       @listings = []
-
       @listings.concat YelpBusiness.find_all(settings.app_db, conditions) if scope.nil? || scope == 'yelp'
       @listings.concat GoogleSpot.find_all(settings.app_db, conditions) if scope.nil? || scope == 'google'
       @listings.concat FacebookPage.find_all(settings.app_db, conditions) if scope.nil? || scope == 'facebook'
 
       halt 404 and return false unless @listings.count > 0
 
+      context = {
+        combined: false,
+        title: params[:title],
+        address: {
+          lat: params[:lat].to_f,
+          lng: params[:lng].to_f,
+          street: params[:street],
+          city: params[:city],
+          state: params[:state],
+          country: params[:country],
+          postal_code: params[:postal_code]
+        }
+      }
+
       @listings.flatten.compact.map do |listing|
-        Responses::DetailResponse.respond({ combined: false }, listing: listing)
+        Responses::DetailResponse.respond(context, listing: listing)
       end.to_json
     end
 
