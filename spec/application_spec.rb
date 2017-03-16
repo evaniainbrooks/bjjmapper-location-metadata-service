@@ -169,10 +169,30 @@ describe 'LocationFetchService' do
   end
   
   describe 'GET /locations/:id/reviews' do
-    let(:request) { } 
+    let(:request) { { :lat => 80.0, :lng => 80.0 } } 
+    
+    context 'with reviews' do
+      let(:listing) { build(:google_spot) }
+      let(:reviews) { [build(:google_review)] }
+      
+      before do
+        GoogleSpot.stub(:find).and_return(listing)
+        GoogleReview.stub(:find_all).and_return(reviews)
+      end
+      
+      it 'returns all reviews for the location' do
+        get "/locations/#{location_id}/reviews?api_key=#{api_key}&scope=google", request, content_type
+        
+        last_response.status.should eq 200
+        last_response.body.should match(reviews[0].author_name)
+      end
+    end
     
     context 'without listings' do
-      before { GoogleSpot.stub(:find_all).and_return([]) }
+      before do
+        GoogleSpot.stub(:find).and_return(nil)
+        GoogleReview.stub(:find_all).and_return([])
+      end
       
       it 'returns 404' do
         get "/locations/#{location_id}/reviews?api_key=#{api_key}&scope=google", request, content_type
@@ -184,9 +204,29 @@ describe 'LocationFetchService' do
   describe 'GET /locations/:id/photos' do
     let(:request) { } 
     
-    context 'without listings' do
-      before { GoogleSpot.stub(:find_all).and_return([]) }
+    context 'with listings' do
+      let(:listing) { build(:google_spot) }
+      let(:photos) { [build(:google_photo)] }
       
+      before do
+        GoogleSpot.stub(:find).and_return(listing)
+        GooglePhoto.stub(:find_all).and_return(photos)
+      end
+      
+      it 'returns all photos for the location' do
+        get "/locations/#{location_id}/photos?api_key=#{api_key}&scope=google", request, content_type
+        
+        last_response.status.should eq 200
+        last_response.body.should match(photos[0].url)
+      end
+    end
+    
+    context 'without listings' do
+      before do
+        GoogleSpot.stub(:find).and_return nil
+        GoogleReview.stub(:find_all).and_return []
+      end
+
       it 'returns 404' do
         get "/locations/#{location_id}/photos?api_key=#{api_key}&scope=google", request, content_type
         last_response.status.should eq 404
