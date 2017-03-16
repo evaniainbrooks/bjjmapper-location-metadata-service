@@ -20,4 +20,5 @@ group :test, :development do
   gem 'rvm1-capistrano3', require: false
   gem 'rspec'
   gem 'rack-test'
+  gem 'factory_girl'
 end

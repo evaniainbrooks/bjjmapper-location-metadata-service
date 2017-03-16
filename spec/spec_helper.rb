@@ -2,6 +2,7 @@
 require 'rack/test'
 require 'rspec'
 require 'dotenv'
+require 'factory_girl'
 
 Dotenv.load
 
@@ -19,4 +20,9 @@ RSpec.configure do |c|
   c.expect_with(:rspec) { |o| o.syntax = :should }
   c.include RSpecMixin
   c.order = "random"
+  c.include FactoryGirl::Syntax::Methods
+
+  c.before(:suite) do
+    FactoryGirl.find_definitions
+  end
 end
