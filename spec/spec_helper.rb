@@ -23,6 +23,7 @@ RSpec.configure do |c|
   c.include FactoryGirl::Syntax::Methods
 
   c.before(:suite) do
+    FactoryGirl.definition_file_paths = %w(locationfetchsvc/spec/factories spec/factories)
     FactoryGirl.find_definitions
   end
 end
