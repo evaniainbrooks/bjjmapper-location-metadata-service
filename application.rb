@@ -319,7 +319,7 @@ module LocationFetchService
       count = params.fetch(:count, 100).to_i
 
       conditions = { 'coordinates' => { '$geoWithin' => { '$centerSphere' => [[lng, lat], distance] }}}
-      sort = [:created_at, -1]
+      sort = {:created_at => -1}
       @google_photos = GooglePhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
       @facebook_photos = FacebookPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
       @yelp_photos = YelpPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count) 
@@ -335,7 +335,7 @@ module LocationFetchService
       count = params.fetch(:count, 100).to_i
 
       conditions = { 'coordinates' => { '$geoWithin' => { '$centerSphere' => [[lng, lat], distance] }}}
-      sort = [:created_at, -1]
+      sort = {:created_at => -1}
       @google_reviews = GoogleReview.find_all(settings.app_db, conditions, sort: sort, limit: count)
       @yelp_reviews = YelpReview.find_all(settings.app_db, conditions, sort: sort, limit: count)
       
