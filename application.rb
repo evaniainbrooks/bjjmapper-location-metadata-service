@@ -264,6 +264,7 @@ module LocationFetchService
         request.body.rewind
         body = JSON.parse(request.body.read)
         @location = body['location']
+        @location['id'] = params[:bjjmapper_location_id]
       ensure
         unless @location
           puts "Missing location param, halting"
