@@ -259,7 +259,7 @@ module LocationFetchService
     #
     # Search before
     #
-    before '/locations/:bjjmapper_location_id/search' do
+    before '/locations/?:bjjmapper_location_id?/search' do
       begin
         request.body.rewind
         body = JSON.parse(request.body.read)
