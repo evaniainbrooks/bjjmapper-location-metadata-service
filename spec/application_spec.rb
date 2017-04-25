@@ -54,12 +54,12 @@ describe 'LocationFetchService' do
   end
 
   describe 'POST /search' do
-    let(:request) { { location: { lat: 80.0, lng: 80.0 }  }.to_json }
-    
+    let(:request_data) { { 'lat' => 80.0, 'lng' => 80.0 } }
+    let(:request) { { location: request_data }.to_json }
     context 'without scope paramter' do
       before do
-        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
-        Resque.should_receive(:enqueue).with(YelpIdentifyCandidateLocationsJob, anything)
+        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, hash_including(request_data))
+        Resque.should_receive(:enqueue).with(YelpIdentifyCandidateLocationsJob, hash_including(request_data))
       end
       
       it 'enqueues an IdentifyCandidateLocationsJob and returns 202' do
@@ -70,7 +70,7 @@ describe 'LocationFetchService' do
     
     context 'with scope parameter' do
       before do
-        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, anything)
+        Resque.should_receive(:enqueue).with(GoogleIdentifyCandidateLocationsJob, hash_including(request_data))
       end
       
       it 'enqueues search job for the scope and returns 202' do
