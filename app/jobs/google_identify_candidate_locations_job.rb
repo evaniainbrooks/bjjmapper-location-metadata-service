@@ -98,7 +98,7 @@ module GoogleIdentifyCandidateLocationsJob
       phone: o[:phone],
       website: o[:website],
       flag_closed: o[:is_closed],
-      status: should_whitelist?(o[:title]) ? BJJMapperClient::LOCATION_STATUS_VERIFIED : BJJMapperClient::LOCATION_STATUS_PENDING
+      status: should_whitelist?(o[:title]) ? BJJMapper::ApiClient::LOCATION_STATUS_VERIFIED : BJJMapper::ApiClient::LOCATION_STATUS_PENDING
     })
 
     puts "Created #{response['id']} location"
