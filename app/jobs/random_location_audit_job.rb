@@ -42,7 +42,7 @@ module RandomLocationAuditJob
     end
     
     puts "Found possible duplicate location #{nearby_locations.first['title']}"
-    @bjjmapper.notify(type: BJJMapperClient::DUPLICATE_LOCATION, 
+    @bjjmapper.notify(type: BJJMapper::ApiClient::DUPLICATE_LOCATION, 
                       message: "Possible duplicate location for #{location['title']}, #{nearby_locations.first['title']}",
                       source: 'AuditJob',
                       lat: location['lat'],

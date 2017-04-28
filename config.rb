@@ -31,6 +31,7 @@ module LocationFetchService
 
   TITLE_BLACKLIST_WORDS = [
     'ilovekickboxing',
+    'bodyshaping',
     'family',
     'ata',
     'wingchun',
