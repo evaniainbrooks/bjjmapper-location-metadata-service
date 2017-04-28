@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'bundler/setup'
 require 'sinatra'
 require 'active_support/all'
 require 'mongo'

@@ -1,8 +1,8 @@
 require 'resque'
 require 'mongo'
 require 'koala'
+require 'bjjmapper_api_client'
 require_relative '../../config'
-require_relative '../../lib/bjjmapper_client'
 
 require_relative './google_search_job'
 require_relative './yelp_search_job'
@@ -10,7 +10,7 @@ require_relative './facebook_search_job'
 
 module RandomLocationAuditJob 
   @queue = LocationFetchService::QUEUE_NAME
-  @bjjmapper = BJJMapperClient.new('localhost', 80) 
+  @bjjmapper = BJJMapper::ApiClient.new(LocationFetchService::BJJMAPPER_CLIENT_SETTINGS)
 
   LOCATION_DUPLICATE_DISTANCE_THRESHOLD = 0.3
   DEFAULT_LOCATION_COUNT = 100 

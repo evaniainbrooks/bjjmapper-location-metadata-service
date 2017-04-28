@@ -1,15 +1,15 @@
 require 'resque'
 require 'mongo'
+require 'bjjmapper_api_client'
 require_relative '../../config'
 require_relative '../../database_client'
 require_relative '../models/yelp_business'
-require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
 require_relative '../../lib/yelp_fusion_client'
 
 module YelpIdentifyCandidateLocationsJob
   @client = YelpFusionClient.new(ENV['YELP_V3_CLIENT_ID'], ENV['YELP_V3_CLIENT_SECRET'])
-  @bjjmapper = BJJMapperClient.new('localhost', 80)
+  @bjjmapper = BJJMapper::ApiClient.new(LocationFetchService::BJJMAPPER_CLIENT_SETTINGS)
 
   @queue = LocationFetchService::QUEUE_NAME
   @connection = LocationFetchService::MONGO_CONNECTION

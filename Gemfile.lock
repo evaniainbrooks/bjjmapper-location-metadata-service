@@ -1,3 +1,9 @@
+GIT
+  remote: git@bitbucket.org:rollfindr/bjjmapper_api_client.git
+  revision: ffd58ab0cedbfd9d88f050df8db542ee363844cf
+  specs:
+    bjjmapper_api_client (0.0.2)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -129,6 +135,7 @@ PLATFORMS
 DEPENDENCIES
   activesupport
   andand
+  bjjmapper_api_client (~> 0.0.2)!
   capistrano (~> 3.2.1)
   capistrano-bundler
   factory_girl

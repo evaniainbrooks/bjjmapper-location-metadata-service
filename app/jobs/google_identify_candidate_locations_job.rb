@@ -1,18 +1,18 @@
 require 'resque'
 require 'mongo'
 require 'google_places'
+require 'bjjmapper_api_client'
 require_relative '../models/google_spot'
 require_relative '../models/google_review'
 require_relative '../models/google_photo'
 require_relative '../../config'
 require_relative '../../database_client'
-require_relative '../../lib/bjjmapper_client'
 require_relative '../../lib/circle_distance'
 
 module GoogleIdentifyCandidateLocationsJob
   @places_client = GooglePlaces::Client.new(LocationFetchService::GOOGLE_PLACES_API_KEY)
 
-  @bjjmapper = BJJMapperClient.new('localhost', 80)
+  @bjjmapper = BJJMapper::ApiClient.new(LocationFetchService::BJJMAPPER_CLIENT_SETTINGS)
 
   @queue = LocationFetchService::QUEUE_NAME
   @connection = LocationFetchService::MONGO_CONNECTION

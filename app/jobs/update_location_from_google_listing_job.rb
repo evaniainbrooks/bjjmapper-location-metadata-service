@@ -1,9 +1,9 @@
 require_relative '../../config'
 require_relative '../../database_client'
-require_relative '../../lib/bjjmapper_client'
+require 'bjjmapper_api_client'
 
 module UpdateLocationFromGoogleListingJob
-  @bjjmapper = BJJMapperClient.new('localhost', 80)
+  @bjjmapper = BJJMapper::ApiClient.new(LocationFetchService::BJJMAPPER_CLIENT_SETTINGS)
   @connection = LocationFetchService::MONGO_CONNECTION
   @queue = LocationFetchService::QUEUE_NAME
 
