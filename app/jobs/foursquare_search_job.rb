@@ -49,7 +49,7 @@ module FoursquareSearchJob
     params = {
       ll: ll, 
       query: title,
-      #radius: LocationFetchService::LISTING_DISTANCE_THRESHOLD_MI * 1609.34, # Meters per mile 
+      radius: 5000,
       intent: LocationFetchService::FOURSQUARE_INTENT, 
       m: LocationFetchService::FOURSQUARE_FORMAT, 
       v: LocationFetchService::FOURSQUARE_API_VERSION
