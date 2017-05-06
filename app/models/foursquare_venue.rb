@@ -70,7 +70,6 @@ class FoursquareVenue
       url: self.canonicalUrl,
       lat: self.lat,
       lng: self.lng,
-      is_closed: self.closed || false,
       is_claimed: self.verified || false,
       phrases: self.phrases,
       rating_count: self.tipCount,
