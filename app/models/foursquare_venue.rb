@@ -8,7 +8,7 @@ class FoursquareVenue
     :name, :phone, :twitter, :formattedPhone,
     :address, :crossStreet, :city, :state, :postalCode,
     :country, :coordinates, :distance, :isFuzzed, :verified, 
-    :checkinsCount, :usersCount, :tipCount, :website, :hours, :price, 
+    :checkinsCount, :usersCount, :tipCount, :url, :hours, :price, 
     :rating, :description, :createdAt, :shortUrl, :canonicalUrl, :phrases, 
     :_id, :foursquare_id, :bjjmapper_location_id, :batch_id, :primary, :created_at
   ].freeze
@@ -19,7 +19,6 @@ class FoursquareVenue
     FoursquareVenue.new(listing_response).tap do |o|
       o.foursquare_id = listing_response.id
       o.created_at = Time.now
-      o.website = listing_response.url
 
       if listing_response.location
         o.coordinates = [listing_response.location.lng, listing_response.location.lat]
@@ -42,7 +41,7 @@ class FoursquareVenue
   
   def address_components
     {
-      street: street, 
+      street: address, 
       city: city,
       state: state,
       country: country,
@@ -64,7 +63,7 @@ class FoursquareVenue
       foursquare_id: self.foursquare_id,
       title: self.name,
       created_at: self.createdAt,
-      website: self.website,
+      website: self.url,
       phone: self.phone, 
       formatted_phone: self.formattedPhone,
       twitter: self.twitter,
