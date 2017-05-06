@@ -22,9 +22,9 @@ describe Address do
       subject.normalize[:country].should match 'United States'
     end
   end
-  describe '.distance' do
+  describe '.lexical_distance' do
     it 'returns the levenshtein distance' do
-      subject.distance(subject).should eq 0
+      subject.lexical_distance(subject).should eq 0
     end
   end
 end

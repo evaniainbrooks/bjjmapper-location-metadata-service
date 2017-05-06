@@ -3,8 +3,8 @@ require 'mongo'
 require 'google_places'
 require_relative '../../config'
 require_relative '../../database_client'
-require_relative '../models/google_spot'
 require_relative '../../lib/circle_distance'
+require_relative '../models/google_spot'
 require_relative './google_fetch_and_associate_job'
 
 module GoogleSearchJob

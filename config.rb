@@ -68,5 +68,9 @@ module LocationFetchService
 
   LISTING_DISTANCE_THRESHOLD_MI = 0.4
 
+  FOURSQUARE_FORMAT = 'foursquare'
+  FOURSQUARE_API_VERSION = '20170506' # Today 2017-05-06
+  FOURSQUARE_INTENT = 'browse'
+
   Koala.config.api_version = "v2.8"
 end

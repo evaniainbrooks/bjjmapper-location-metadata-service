@@ -10,10 +10,11 @@ gem 'resque'
 gem 'mongo', '~> 2.4'
 gem 'json'
 gem 'koala', '~> 2.2'
+gem 'foursquare2'
 gem 'thin'
 gem 'http'
 gem 'levenshtein-ffi', :require => 'levenshtein'
-gem 'bjjmapper_api_client', '~> 0.0.2', :git => 'git@bitbucket.org:rollfindr/bjjmapper_api_client.git'
+gem 'bjjmapper_api_client', '~> 0.0.5', :git => 'git@bitbucket.org:rollfindr/bjjmapper_api_client.git'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'

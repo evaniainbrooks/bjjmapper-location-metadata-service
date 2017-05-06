@@ -338,7 +338,7 @@ class Address
     keys.map {|k| @address_components[k] }.compact.join(', ') || ""
   end
 
-  def distance(components0, compare_keys = ADDRESS_COMPONENTS)
+  def lexical_distance(components0, compare_keys = ADDRESS_COMPONENTS)
     street_distance = Levenshtein.distance(self.normalize[:street] || "", components0.normalize[:street] || "")
     tail_distance = Levenshtein.distance(self.normalize.to_s(compare_keys - [:street]),
                                          components0.normalize.to_s(compare_keys - [:street]))

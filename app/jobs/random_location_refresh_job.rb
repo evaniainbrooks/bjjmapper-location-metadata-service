@@ -7,6 +7,7 @@ require_relative '../../config'
 require_relative './google_search_job'
 require_relative './yelp_search_job'
 require_relative './facebook_search_job'
+require_relative './foursquare_search_job'
 
 module RandomLocationRefreshJob 
   @queue = LocationFetchService::QUEUE_NAME
@@ -32,6 +33,7 @@ module RandomLocationRefreshJob
       Resque.enqueue(GoogleSearchJob, location_fields) if scope.nil? || scope == 'google'
       Resque.enqueue(FacebookSearchJob, location_fields) if scope.nil? || scope == 'facebook'
       Resque.enqueue(YelpSearchJob, location_fields) if scope.nil? || scope == 'yelp'
+      Resque.enqueue(FoursquareSearchJob, location_fields) if scope.nil? || scope == 'foursquare'
     end
   end
 end

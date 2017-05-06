@@ -11,16 +11,21 @@ require_relative './config'
 require_relative 'app/jobs/facebook_search_job'
 require_relative 'app/jobs/google_search_job'
 require_relative 'app/jobs/yelp_search_job'
+require_relative 'app/jobs/foursquare_search_job'
 require_relative 'app/jobs/google_identify_candidate_locations_job'
 require_relative 'app/jobs/yelp_identify_candidate_locations_job'
 require_relative 'app/jobs/google_fetch_and_associate_job'
 require_relative 'app/jobs/yelp_fetch_and_associate_job'
+require_relative 'app/jobs/foursquare_fetch_and_associate_job'
 
 require_relative 'app/jobs/random_location_refresh_job'
 require_relative 'app/jobs/random_location_audit_job'
 
 require_relative 'app/models/facebook_page'
 require_relative 'app/models/facebook_photo'
+
+require_relative 'app/models/foursquare_venue'
+require_relative 'app/models/foursquare_photo'
 
 require_relative 'app/models/google_review'
 require_relative 'app/models/google_spot'
@@ -75,12 +80,13 @@ module LocationFetchService
       @facebook_listing = FacebookPage.find(settings.app_db, conditions) if scope.nil? || scope == 'facebook'
       @google_listing = GoogleSpot.find(settings.app_db, conditions) if scope.nil? || scope == 'google'
       @yelp_listing = YelpBusiness.find(settings.app_db, conditions) if scope.nil? || scope == 'yelp'
+      @foursquare_listing = FoursquareVenue.find(settings.app_db, conditions) if scope.nil? || scope == 'foursquare'
     end
 
     before '/locations/:bjjmapper_location_id/?*' do
       pass if ['associate', 'listings', 'search'].include? request.path_info.split('/')[-1]
 
-      if @google_listing.nil? && @yelp_listing.nil? && @facebook_listing.nil?
+      if @google_listing.nil? && @yelp_listing.nil? && @facebook_listing.nil? && @foursquare_listing.nil?
         puts "No listings found"
         halt 404 and return false
       end
@@ -104,7 +110,7 @@ module LocationFetchService
         }
       }
       
-      listings = {google: @google_listing, yelp: @yelp_listing, facebook: @facebook_listing}
+      listings = {foursquare: @foursquare_listing, google: @google_listing, yelp: @yelp_listing, facebook: @facebook_listing}
       
       return Responses::DetailResponse.respond(context, listings).to_json
     end
@@ -124,8 +130,13 @@ module LocationFetchService
         yelp_photo_conditions = {yelp_id: @yelp_listing.yelp_id}
         @yelp_photos = YelpPhoto.find_all(settings.app_db, yelp_photo_conditions)
       end
+      
+      unless @foursquare_listing.nil?
+        foursquare_photo_conditions = {foursquare_id: @foursquare_listing.foursquare_id}
+        @foursquare_photos = FoursquarePhoto.find_all(settings.app_db, foursquare_photo_conditions)
+      end
 
-      photos = {google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
+      photos = {foursquare: @foursquare_photos, google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
       count = params[:count]
       Responses::PhotosResponse.respond(photos, count: count).to_json
     end
@@ -155,6 +166,7 @@ module LocationFetchService
       @listings.concat YelpBusiness.find_all(settings.app_db, conditions) if scope.nil? || scope == 'yelp'
       @listings.concat GoogleSpot.find_all(settings.app_db, conditions) if scope.nil? || scope == 'google'
       @listings.concat FacebookPage.find_all(settings.app_db, conditions) if scope.nil? || scope == 'facebook'
+      @listings.concat FoursquareVenue.find_all(settings.app_db, conditions) if scope.nil? || scope == 'foursquare'
 
       halt 404 and return false unless @listings.count > 0
 
@@ -253,6 +265,31 @@ module LocationFetchService
           })
         end
       end
+      
+      if params[:foursquare_id]
+        puts "Checking Foursquare association"
+        if @foursquare_listing && params[:foursquare_id] != @foursquare_listing.foursquare_id
+          puts "Updating existing listing #{@foursquare_listing.foursquare_id}"
+          @foursquare_listing.primary = false
+          @foursquare_listing.save(settings.app_db)
+        end
+        
+        location_id = params[:bjjmapper_location_id]
+        conditions = {foursquare_id: params[:foursquare_id]}
+        new_spot = FoursquareVenue.find(settings.app_db, conditions)
+        if !new_spot.nil?
+          puts "New associated listing exists #{new_spot.foursquare_id}"
+          new_spot.bjjmapper_location_id = location_id
+          new_spot.primary = true
+          new_spot.save(settings.app_db)
+        else
+          puts "New associated listing does not exist, fetching"
+          Resque.enqueue(FoursquareFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            foursquare_id: params[:foursquare_id]
+          })
+        end
+      end
 
       status 202
     end
@@ -305,6 +342,20 @@ module LocationFetchService
           Resque.enqueue(YelpSearchJob, @location)
         end
       end
+      
+      if scope.nil? || scope == 'foursquare'
+        listing = FoursquareVenue.find(settings.app_db, conditions)
+        if !listing.nil?
+          puts "Found foursquare listing #{listing.inspect}, refreshing"
+          Resque.enqueue(FoursquareFetchAndAssociateJob, {
+            bjjmapper_location_id: location_id,
+            foursquare_id: listing.foursquare_id
+          })
+        else
+          puts "No yelp listing, searching"
+          Resque.enqueue(FoursquareSearchJob, @location)
+        end
+      end
 
       # There is no FetchAndAssociate for Facebook (yet)
       Resque.enqueue(FacebookSearchJob, @location) if scope.nil? || (scope == 'facebook')
@@ -325,8 +376,9 @@ module LocationFetchService
       @google_photos = GooglePhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
       @facebook_photos = FacebookPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count)
       @yelp_photos = YelpPhoto.find_all(settings.app_db, conditions, sort: sort, limit: count) 
+      @foursquare_photos = FoursquarePhoto.find_all(settings.app_db, conditions, sort: sort, limit: count) 
 
-      photos = {google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
+      photos = {foursquare: @foursquare_photos, google: @google_photos, facebook: @facebook_photos, yelp: @yelp_photos}
       Responses::PhotosResponse.respond(photos, count: count).to_json
     end
     

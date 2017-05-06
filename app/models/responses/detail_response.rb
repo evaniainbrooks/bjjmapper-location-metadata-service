@@ -18,7 +18,7 @@ module Responses
           #end
           if compare_address
             compare_keys = Address::ADDRESS_COMPONENTS - [:state]
-            distance = Address.new(h).distance(compare_address, compare_keys)
+            distance = Address.new(h).lexical_distance(compare_address, compare_keys)
             pct = percent(distance, compare_address.normalize.to_s(compare_keys).length)
             h[:address_match] = pct
             h[:distance] = Math.circle_distance(context[:address][:lat], context[:address][:lng], h[:lat], h[:lng])
