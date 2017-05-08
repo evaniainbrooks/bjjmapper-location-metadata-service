@@ -14,12 +14,11 @@ class FoursquarePhoto
   def self.from_response(response, params = {})
     return FoursquarePhoto.new(response).tap do |o|
       o.created_at = Time.now
-      o.url = params[:url]
       o.coordinates = [params[:lng], params[:lat]]
       o.foursquare_id = params[:foursquare_id]
       o.bjjmapper_location_id = params[:bjjmapper_location_id]
       o.width = params[:width]
-      o.url = [response.prefix, 'width', o.width, response.suffix]
+      o.url = [response.prefix, 'width', o.width, response.suffix].join 
     end
   end
 
@@ -39,7 +38,7 @@ class FoursquarePhoto
     {
       created_at: self.created_at,
       source: 'Foursquare',
-      url: self.url,
+      url: self.url.is_a?(Array) ? self.url.join : self.url,
       lat: self.lat,
       lng: self.lng,
       width: self.width,
