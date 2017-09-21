@@ -51,7 +51,13 @@ module LocationFetchService
     'cultural',
     'aikido',
     'ai-kido',
-    'kido'
+    'kido',
+    'cosmetic',
+    'beauty',
+    'surgical',
+    'nails',
+    'barber',
+    'ambulance'
   ].freeze
 
   TITLE_WHITELIST_WORDS = [

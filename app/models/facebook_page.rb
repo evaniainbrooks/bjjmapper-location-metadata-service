@@ -48,7 +48,7 @@ class FacebookPage
   end
 
   def as_json
-    except_fields = [:coordinates, :_id, :link, :is_permanently_closed, :is_unclaimed, :hours, :picture, :primary, :name]
+    except_fields = [:feed, :posts, :coordinates, :_id, :link, :is_permanently_closed, :is_unclaimed, :hours, :picture, :primary, :name]
     (COLLECTION_FIELDS - except_fields).inject({}) do |h, k|
       h[k] = self.send(k) if self.respond_to?(k)
       h
