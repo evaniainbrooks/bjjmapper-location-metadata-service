@@ -5,9 +5,9 @@ class JiujitsucomGym
   
   COLLECTION_NAME = 'jiujitsucom_gyms'
   COLLECTION_FIELDS = [
-    :title, :phone, :website, :url, :street, 
+    :title, :phone, :website, :url, :street, :coordinates,
     :city, :state, :postal_code, :country, :lat, :lng,  
-    :_id, :remote_id, :bjjmapper_location_id, :batch_id, :primary, :created_at
+    :_id, :jiujitsucom_id, :bjjmapper_location_id, :batch_id, :primary, :created_at
   ].freeze
 
   attr_accessor *COLLECTION_FIELDS
@@ -22,10 +22,14 @@ class JiujitsucomGym
     }
   end
 
+  def self.gen_remote_id txt
+    Digest::MD5.hexdigest(txt)
+  end
+
   def as_json
     address_components.merge(
       source: 'Jiujitsucom', 
-      remote_id: self.remote_id,
+      jiujitsucom_id: self.remote_id || JiujitsucomGym.gen_remote_id(self.url),
       url: self.url,
       title: self.title,
       created_at: self.created_at,

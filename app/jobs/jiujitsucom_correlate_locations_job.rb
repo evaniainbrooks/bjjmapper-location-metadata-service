@@ -29,7 +29,9 @@ module JiujitsucomCorrelateLocationsJob
   CREATE_VERIFIED = true
   FETCH_MAX = 10
   SKIP_CREATE = false
-    
+  SKIP_COUNT = 0
+  SKIP_FETCH_COUNT = 0
+
   def self.create_or_associate_location! gymattrs, stats
     addrs = geocode_address(gymattrs[:address], stats)
     if addrs.empty?
@@ -44,7 +46,7 @@ module JiujitsucomCorrelateLocationsJob
     nearest = bjjmapper_nearby_locations.first
     if !nearest.nil?
       associate_listing! attrs, nearest, stats
-    elsif !options.fetch(:skip_create, SKIP_CREATE)
+    else
       puts "Creating location #{attrs}"
       response = @bjjmapper.create_location({
         title: attrs[:name],
@@ -58,15 +60,13 @@ module JiujitsucomCorrelateLocationsJob
         phone: attrs[:phone],
         website: attrs[:website],
         flag_closed: false,
-        status: optons.fetch(:created_verified, CREATE_VERIFIED) ? BJJMapper::ApiClient::LOCATION_STATUS_VERIFIED : BJJMapper::ApiClient::LOCATION_STATUS_PENDING
+        status: CREATE_VERIFIED ? BJJMapper::ApiClient::LOCATION_STATUS_VERIFIED : BJJMapper::ApiClient::LOCATION_STATUS_PENDING
       })
       
       stats[:created_count] += 1
       puts "Created #{response['id']} location"
       
       associate_listing! attrs, response, stats
-    else
-      puts "Not creating location, option :skip_create => true"
     end
   end
 
@@ -83,7 +83,8 @@ module JiujitsucomCorrelateLocationsJob
       associated_count: 0
     }
 
-    page.css('.gym-list .stated .children a').collect { |cat| cat['href'] }.each do |link|
+    skip_fetch = options.fetch(:skip_fetch, SKIP_FETCH_COUNT)
+    page.css('.gym-list .stated .children a').collect { |cat| cat['href'] }.drop(skip_fetch).each do |link|
       begin
         puts "Fetching #{link}"
         subpage = Nokogiri::HTML(open(link))
@@ -92,6 +93,12 @@ module JiujitsucomCorrelateLocationsJob
           puts "Reached max"
           puts stats
           exit
+        end
+
+        if stats[:fetched_count] < options.fetch(:skip, SKIP_COUNT)
+          puts "Skipping"
+          sleep options.fetch(:sleep_time, SLEEPY_TIME)
+          next
         end
 
         subpage.css('.business-name > td').each do |business|
@@ -154,12 +161,13 @@ module JiujitsucomCorrelateLocationsJob
       gym.country = attrs[:country]
       gym.lat = attrs[:lat]
       gym.lng = attrs[:lng]
+      gym.coordinates = [attrs[:lng], attrs[:lat]]
       gym.url = attrs[:url]
       gym.bjjmapper_location_id = nearest['id']
       gym.created_at = Time.now
       gym.primary = true
-      gym.remote_id = Digest::MD5.hexdigest(attrs[:url])
-    end.upsert(@connection, bjjmapper_location_id: nearest['id'], remote_id: Digest::MD5.hexdigest(attrs[:url]))
+      gym.jiujitsucom_id = JiujitsucomGym.gen_remote_id attrs[:url]
+    end.upsert(@connection, bjjmapper_location_id: nearest['id'], jiujitsucom_id: JiujitsucomGym.gen_remote_id(attrs[:url]))
   end
 end
 

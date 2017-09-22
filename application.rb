@@ -53,12 +53,13 @@ module LocationFetchService
       @google_listing = GoogleSpot.find(settings.app_db, conditions) if scope.nil? || scope == 'google'
       @yelp_listing = YelpBusiness.find(settings.app_db, conditions) if scope.nil? || scope == 'yelp'
       @foursquare_listing = FoursquareVenue.find(settings.app_db, conditions) if scope.nil? || scope == 'foursquare'
+      @jiujitsucom_listing = JiujitsucomGym.find(settings.app_db, conditions) if scope.nil? || scope == 'jiujitsucom'
     end
 
     before '/locations/:bjjmapper_location_id/?*' do
       pass if ['associate', 'listings', 'search'].include? request.path_info.split('/')[-1]
 
-      if @google_listing.nil? && @yelp_listing.nil? && @facebook_listing.nil? && @foursquare_listing.nil?
+      if @jiujitsucom_listing.nil? && @google_listing.nil? && @yelp_listing.nil? && @facebook_listing.nil? && @foursquare_listing.nil?
         puts "No listings found"
         halt 404 and return false
       end
@@ -82,7 +83,7 @@ module LocationFetchService
         }
       }
       
-      listings = {foursquare: @foursquare_listing, google: @google_listing, yelp: @yelp_listing, facebook: @facebook_listing}
+      listings = {jiujitsucom: @jiujitsucom_listing, foursquare: @foursquare_listing, google: @google_listing, yelp: @yelp_listing, facebook: @facebook_listing}
       
       return Responses::DetailResponse.respond(context, listings).to_json
     end
@@ -139,6 +140,7 @@ module LocationFetchService
       @listings.concat GoogleSpot.find_all(settings.app_db, conditions) if scope.nil? || scope == 'google'
       @listings.concat FacebookPage.find_all(settings.app_db, conditions) if scope.nil? || scope == 'facebook'
       @listings.concat FoursquareVenue.find_all(settings.app_db, conditions) if scope.nil? || scope == 'foursquare'
+      @listings.concat JiujitsucomGym.find(settings.app_db, conditions) if scope.nil? || scope == 'jiujitsucom'
 
       halt 404 and return false unless @listings.count > 0
 

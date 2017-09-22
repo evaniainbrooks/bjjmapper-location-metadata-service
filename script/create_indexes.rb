@@ -3,6 +3,11 @@ require_relative '../config'
 
 client = Mongo::Client.new("mongodb://#{LocationFetchService::DATABASE_HOST}:#{LocationFetchService::DATABASE_PORT}/#{LocationFetchService::DATABASE_APP_DB}")
 
+client[:jiujitsucom_gyms].indexes.create_one(bjjmapper_location_id: 1, jiujitsucom_id: 1)
+
+client[:foursquare_venues].indexes.create_one(bjjmapper_location_id: 1, foursquare_id: 1)
+client[:foursquare_photos].indexes.create_one(foursquare_id: 1, url: 1)
+
 client[:facebook_pages].indexes.create_one(bjjmapper_location_id: 1, facebook_id: 1)
 client[:facebook_photos].indexes.create_one(width: 1, height: 1, album_id: 1, facebook_id: 1, photo_id: 1)
 
@@ -14,6 +19,6 @@ client[:google_places_spots].indexes.create_one(bjjmapper_location_id: 1, place_
 client[:google_places_photos].indexes.create_one(place_id: 1, photo_reference: 1)
 client[:google_places_reviews].indexes.create_one(place_id: 1, author_name: 1, time: 1)
 
-[:facebook_pages, :facebook_photos, :yelp_businesses, :yelp_photos, :yelp_reviews, :google_places_spots, :google_places_photos, :google_places_reviews].each do |sym|
+[:jiujitsucom_gyms, :foursquare_venues, :foursquare_photos, :facebook_pages, :facebook_photos, :yelp_businesses, :yelp_photos, :yelp_reviews, :google_places_spots, :google_places_photos, :google_places_reviews].each do |sym|
   client[sym].indexes.create_one(coordinates: "2dsphere")
 end
