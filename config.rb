@@ -18,8 +18,11 @@ module LocationFetchService
   AVATAR_SERVICE_PORT = '80'
 
   QUEUE_NAME = 'locations'
+  IMPORT_QUEUE_NAME = 'locations_import'
 
   GOOGLE_PLACES_API_KEY = ENV['GOOGLE_PLACES_API_KEY']
+  GOOGLE_GEOCODER_API_KEY = ENV['GOOGLE_GEOCODER_API_KEY']
+
   YELP_API_KEY = {
     consumer_key: ENV['YELP_API_CONSUMER_KEY'],
     consumer_secret: ENV['YELP_API_CONSUMER_SECRET'],

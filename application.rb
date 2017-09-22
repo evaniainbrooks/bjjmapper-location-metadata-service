@@ -6,39 +6,11 @@ require 'mongo'
 require 'json/ext'
 require 'resque'
 require 'redis'
+require 'require_all'
 
 require_relative './config'
-require_relative 'app/jobs/facebook_search_job'
-require_relative 'app/jobs/google_search_job'
-require_relative 'app/jobs/yelp_search_job'
-require_relative 'app/jobs/foursquare_search_job'
-require_relative 'app/jobs/google_identify_candidate_locations_job'
-require_relative 'app/jobs/yelp_identify_candidate_locations_job'
-require_relative 'app/jobs/google_fetch_and_associate_job'
-require_relative 'app/jobs/yelp_fetch_and_associate_job'
-require_relative 'app/jobs/foursquare_fetch_and_associate_job'
-
-require_relative 'app/jobs/random_location_refresh_job'
-require_relative 'app/jobs/random_location_audit_job'
-
-require_relative 'app/models/facebook_page'
-require_relative 'app/models/facebook_photo'
-
-require_relative 'app/models/foursquare_venue'
-require_relative 'app/models/foursquare_photo'
-
-require_relative 'app/models/google_review'
-require_relative 'app/models/google_spot'
-require_relative 'app/models/google_photo'
-
-require_relative 'app/models/yelp_business'
-require_relative 'app/models/yelp_review'
-require_relative 'app/models/yelp_photo'
-
-require_relative 'app/models/responses/location_reviews_response'
-require_relative 'app/models/responses/reviews_response'
-require_relative 'app/models/responses/photos_response'
-require_relative 'app/models/responses/detail_response'
+require_rel 'app/jobs'
+require_rel 'app/models'
 
 include Mongo
 

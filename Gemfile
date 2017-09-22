@@ -15,6 +15,9 @@ gem 'thin'
 gem 'http'
 gem 'levenshtein-ffi', :require => 'levenshtein'
 gem 'bjjmapper_api_client', '~> 0.0.5', :git => 'git@bitbucket.org:rollfindr/bjjmapper_api_client.git'
+gem 'nokogiri'
+gem 'geocoder'
+gem 'require_all'
 
 group :test, :development do
   gem 'capistrano', '~> 3.2.1'
