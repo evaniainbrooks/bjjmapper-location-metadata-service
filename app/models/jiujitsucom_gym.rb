@@ -29,7 +29,7 @@ class JiujitsucomGym
   def as_json
     address_components.merge(
       source: 'Jiujitsucom', 
-      jiujitsucom_id: self.remote_id || JiujitsucomGym.gen_remote_id(self.url),
+      jiujitsucom_id: self.jiujitsucom_id,
       url: self.url,
       title: self.title,
       created_at: self.created_at,

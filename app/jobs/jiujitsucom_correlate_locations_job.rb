@@ -29,7 +29,6 @@ module JiujitsucomCorrelateLocationsJob
   CREATE_VERIFIED = true
   FETCH_MAX = 10
   SKIP_CREATE = false
-  SKIP_COUNT = 0
   SKIP_FETCH_COUNT = 0
 
   def self.create_or_associate_location! gymattrs, stats
@@ -95,27 +94,21 @@ module JiujitsucomCorrelateLocationsJob
           exit
         end
 
-        if stats[:fetched_count] < options.fetch(:skip, SKIP_COUNT)
-          puts "Skipping"
-          sleep options.fetch(:sleep_time, SLEEPY_TIME)
-          next
-        end
-
         subpage.css('.business-name > td').each do |business|
           elems = business.children.to_a.delete_if {|x| x.text !~ /\w/}
           puts "Found #{elems.size} text nodes"
-          if elems.size >= 4
+          if elems.size >= 3
             attrs = { 
               name: elems[0].text.strip,
               phone: elems[1].text.strip,
               address: elems[2].text.strip,
-              website: elems[3].text.strip,
+              website: elems.size > 3 ? elems[3].text.strip : nil,
               url: elems[0]['href']
             }
 
             stats[:processed_count] += 1
             JiujitsucomCorrelateLocationsJob.create_or_associate_location!(attrs, stats)
-          else 
+          else
             puts "Not what I expected: #{elems.collect(&:text).collect(&:strip).join('\r\n')}"
           end
         end
