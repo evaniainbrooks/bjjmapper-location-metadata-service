@@ -4,8 +4,12 @@ require_relative '../address'
 
 module Responses
   class DetailResponse
+    COORDINATE_PRECISION = 6
+
     def self.respond(context, listings)
       compare_address = Address.new(context[:address]) if context[:address]
+      compare_lat = context[:address][:lat].round(COORDINATE_PRECISION) if context[:address]
+      compare_lng = context[:address][:lng].round(COORDINATE_PRECISION) if context[:address]
 
       attributes = listings.values.map do |listing|
         next if listing.nil?
@@ -21,7 +25,7 @@ module Responses
             distance = Address.new(h).lexical_distance(compare_address, compare_keys)
             pct = percent(distance, compare_address.normalize.to_s(compare_keys).length)
             h[:address_match] = pct
-            h[:distance] = Math.circle_distance(context[:address][:lat], context[:address][:lng], h[:lat], h[:lng])
+            h[:distance] = Math.circle_distance(compare_lat, compare_lng, h[:lat].round(COORDINATE_PRECISION), h[:lng].round(COORDINATE_PRECISION))
           end
         end
       end.compact
